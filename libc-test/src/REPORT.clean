@@ -1,0 +1,175 @@
+src/common/runtest.c:29: src/api/main.exe exec failed: No such file or directory
+FAIL src/api/main.exe [status 1]
+cc: error: src/api/unistd.o: No such file or directory
+src/api/unistd.c: In function 'f':
+src/api/unistd.c:87:3: error: '_CS_POSIX_V7_THREADS_CFLAGS' undeclared (first use in this function)
+   87 | C(_CS_POSIX_V7_THREADS_CFLAGS)
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/api/unistd.c:5:21: note: in definition of macro 'C'
+    5 | #define C(n) switch(n){case n:;}
+      |                     ^
+src/api/unistd.c:87:3: note: each undeclared identifier is reported only once for each function it appears in
+   87 | C(_CS_POSIX_V7_THREADS_CFLAGS)
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/api/unistd.c:5:21: note: in definition of macro 'C'
+    5 | #define C(n) switch(n){case n:;}
+      |                     ^
+src/api/unistd.c:88:3: error: '_CS_POSIX_V7_THREADS_LDFLAGS' undeclared (first use in this function)
+   88 | C(_CS_POSIX_V7_THREADS_LDFLAGS)
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/api/unistd.c:5:21: note: in definition of macro 'C'
+    5 | #define C(n) switch(n){case n:;}
+      |                     ^
+src/api/unistd.c:117:3: error: '_PC_TIMESTAMP_RESOLUTION' undeclared (first use in this function)
+  117 | C(_PC_TIMESTAMP_RESOLUTION)
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~
+src/api/unistd.c:5:21: note: in definition of macro 'C'
+    5 | #define C(n) switch(n){case n:;}
+      |                     ^
+src/api/unistd.c:238:3: error: '_SC_XOPEN_UUCP' undeclared (first use in this function)
+  238 | C(_SC_XOPEN_UUCP)
+      |   ^~~~~~~~~~~~~~
+src/api/unistd.c:5:21: note: in definition of macro 'C'
+    5 | #define C(n) switch(n){case n:;}
+      |                     ^
+src/functional/strptime.c:23: "%F": failed to parse "1856-07-10"
+src/functional/strptime.c:23: "%s": failed to parse "683078400"
+src/functional/strptime.c:47: "%z": failed to parse "+0200"
+src/functional/strptime.c:47: "%z": failed to parse "-0530"
+src/functional/strptime.c:47: "%z": failed to parse "-06"
+FAIL src/functional/strptime-static.exe [status 1]
+src/functional/strptime.c:23: "%F": failed to parse "1856-07-10"
+src/functional/strptime.c:23: "%s": failed to parse "683078400"
+src/functional/strptime.c:47: "%z": failed to parse "+0200"
+src/functional/strptime.c:47: "%z": failed to parse "-0530"
+src/functional/strptime.c:47: "%z": failed to parse "-06"
+FAIL src/functional/strptime.exe [status 1]
+X src/math/special/acosh.h:9: RN acosh(0x1.001f1c62cf304p+0) want 0x1.f8d125ff71ccp-6 got 0x1.f8d125ff71cc2p-6 ulperr 1.853 = 0x1p+1 + -0x1.2d785ap-3
+X src/math/special/acosh.h:10: RN acosh(0x1.00788c223616fp+0) want 0x1.f0cb8ee812621p-5 got 0x1.f0cb8ee812623p-5 ulperr 1.724 = 0x1p+1 + -0x1.1b0c1ap-2
+X src/math/special/acosh.h:11: RN acosh(0x1.007b7a37c7606p+0) want 0x1.f6cb68859ae3p-5 got 0x1.f6cb68859ae2ep-5 ulperr -1.855 = -0x1p+1 + 0x1.280488p-3
+X src/math/special/acosh.h:12: RN acosh(0x1.01d173033243cp+0) want 0x1.e7e1b18d99376p-4 got 0x1.e7e1b18d99378p-4 ulperr 1.930 = 0x1p+1 + -0x1.1f3d3ep-4
+X src/math/special/acosh.h:13: RN acosh(0x1.01d8f20e90409p+0) want 0x1.ebca3eea5cda5p-4 got 0x1.ebca3eea5cda3p-4 ulperr -1.652 = -0x1p+1 + 0x1.648602p-2
+X src/math/special/acosh.h:14: RN acosh(0x1.01ef6122e68bep+0) want 0x1.f74df150afc94p-4 got 0x1.f74df150afc92p-4 ulperr -1.762 = -0x1p+1 + 0x1.e79556p-3
+X src/math/special/acosh.h:15: RN acosh(0x1.06822faf07879p+0) want 0x1.ccd73cbc4af78p-3 got 0x1.ccd73cbc4af7ap-3 ulperr 1.674 = 0x1p+1 + -0x1.4df79ep-2
+X src/math/special/acosh.h:17: RN acosh(0x1.069d65411ec51p+0) want 0x1.d0928b08facbap-3 got 0x1.d0928b08facbcp-3 ulperr 1.785 = 0x1p+1 + -0x1.b83338p-3
+X src/math/special/acosh.h:18: RN acosh(0x1.071d6b2713d08p+0) want 0x1.e1bc6a6c345fdp-3 got 0x1.e1bc6a6c345ffp-3 ulperr 1.818 = 0x1p+1 + -0x1.74a04ep-3
+X src/math/special/acosh.h:19: RN acosh(0x1.0728405f5140cp+0) want 0x1.e328ebe92b32cp-3 got 0x1.e328ebe92b32ep-3 ulperr 1.790 = 0x1p+1 + -0x1.ae89ap-3
+X src/math/special/acosh.h:20: RN acosh(0x1.07bd2c5c01bcbp+0) want 0x1.f6513c44c131p-3 got 0x1.f6513c44c1312p-3 ulperr 1.719 = 0x1p+1 + -0x1.203932p-2
+X src/math/special/acosh.h:21: RN acosh(0x1.1aae7c452c859p+0) want 0x1.cf8d69288e386p-2 got 0x1.cf8d69288e384p-2 ulperr -1.723 = -0x1p+1 + 0x1.1b325ap-2
+X src/math/special/acosh.h:23: RN acosh(0x1.1b50764626f1ep+0) want 0x1.d4ec67c71794p-2 got 0x1.d4ec67c717942p-2 ulperr 1.738 = 0x1p+1 + -0x1.0c09dap-2
+X src/math/special/asinh.h:7: RN asinh(0x1.fbdd0eedf8143p-3) want 0x1.f6cc20d7a594ap-3 got 0x1.f6cc20d7a594cp-3 ulperr 1.513 = 0x1p+1 + -0x1.f327a8p-2
+X src/math/special/asinh.h:8: RN asinh(0x1.df2723491f88fp-3) want 0x1.dae2c8444900cp-3 got 0x1.dae2c8444900ap-3 ulperr -1.551 = -0x1p+1 + 0x1.cb8b86p-2
+X src/math/special/asinh.h:9: RN asinh(0x1.ef675c6541305p-3) want 0x1.eab20432c9598p-3 got 0x1.eab20432c959ap-3 ulperr 1.568 = 0x1p+1 + -0x1.ba9e34p-2
+X src/math/special/asinh.h:10: RN asinh(0x1.f19df3a1722a9p-3) want 0x1.ecd8a7f621554p-3 got 0x1.ecd8a7f621552p-3 ulperr -1.535 = -0x1p+1 + 0x1.dbc1a8p-2
+X src/math/special/asinh.h:11: RN asinh(0x1.f1af09dcfa7d6p-3) want 0x1.ece942815ceccp-3 got 0x1.ece942815cecap-3 ulperr -1.526 = -0x1p+1 + 0x1.e5bb5p-2
+X src/math/special/asinh.h:12: RN asinh(0x1.f339ebbeac5bap-3) want 0x1.ee68f10a49c42p-3 got 0x1.ee68f10a49c44p-3 ulperr 1.529 = 0x1p+1 + -0x1.e28cbp-2
+X src/math/special/asinh.h:13: RN asinh(0x1.f424275dc8787p-3) want 0x1.ef4c7fcb51c56p-3 got 0x1.ef4c7fcb51c54p-3 ulperr -1.642 = -0x1p+1 + 0x1.6e4e9p-2
+X src/math/special/asinh.h:14: RN asinh(0x1.f60d54a133665p-3) want 0x1.f127a8dec0c2p-3 got 0x1.f127a8dec0c1ep-3 ulperr -1.512 = -0x1p+1 + 0x1.f3c9eap-2
+X src/math/special/asinh.h:15: RN asinh(0x1.fdccdaf285ffdp-3) want 0x1.f8ad4bed7af4cp-3 got 0x1.f8ad4bed7af4ap-3 ulperr -1.576 = -0x1p+1 + 0x1.b1f1f8p-2
+X src/math/special/asinh.h:16: RN asinh(0x1.ff5bec94924c7p-3) want 0x1.fa30836c3949ap-3 got 0x1.fa30836c39498p-3 ulperr -1.533 = -0x1p+1 + 0x1.de989p-2
+X src/math/special/asinh.h:17: RN asinh(0x1.028e8fd61c8a5p-2) want 0x1.ffc55bd02e9dep-3 got 0x1.ffc55bd02e9ep-3 ulperr 1.670 = 0x1p+1 + -0x1.523c08p-2
+X src/math/special/asinh.h:18: RN asinh(0x1.dc71794e1f137p-2) want 0x1.ccbd41a7d058ap-2 got 0x1.ccbd41a7d0588p-2 ulperr -1.585 = -0x1p+1 + 0x1.a944b8p-2
+X src/math/special/asinh.h:19: RN asinh(0x1.df308e177c3cbp-2) want 0x1.cf3a638145d7ap-2 got 0x1.cf3a638145d78p-2 ulperr -1.505 = -0x1p+1 + 0x1.fb3684p-2
+X src/math/special/asinh.h:20: RN asinh(0x1.ea94e1e267746p-2) want 0x1.d9862533f65f6p-2 got 0x1.d9862533f65f4p-2 ulperr -1.579 = -0x1p+1 + 0x1.af51ecp-2
+X src/math/special/asinh.h:21: RN asinh(0x1.ecd4f07608dc7p-2) want 0x1.db8d6fdcc6d74p-2 got 0x1.db8d6fdcc6d76p-2 ulperr 1.517 = 0x1p+1 + -0x1.eeb48p-2
+X src/math/special/asinh.h:22: RN asinh(0x1.f30656c78ee7ep-2) want 0x1.e1204e364a186p-2 got 0x1.e1204e364a188p-2 ulperr 1.576 = 0x1p+1 + -0x1.b23ffp-2
+X src/math/special/asinh.h:23: RN asinh(0x1.f5c0c6e41b969p-2) want 0x1.e393d3dc3b70ap-2 got 0x1.e393d3dc3b70cp-2 ulperr 1.562 = 0x1p+1 + -0x1.c06dbep-2
+X src/math/special/asinh.h:24: RN asinh(0x1.09c58725300e7p-1) want 0x1.fe2c7f25fb172p-2 got 0x1.fe2c7f25fb174p-2 ulperr 1.579 = 0x1p+1 + -0x1.ae9df6p-2
+X src/math/special/erfc.h:6: RN erfc(0x1.5db559fe5c0bap+0) want 0x1.b53cf571d328fp-5 got 0x1.b53cf571d328cp-5 ulperr -2.609 = -0x1.8p+1 + 0x1.900982p-2
+X src/math/special/exp2.h:12: bad fp exception: RN exp2(-0x1.ff8p+9)=0x1p-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/special/exp2.h:18: bad fp exception: RN exp2(-0x1.ff8p+9)=0x1p-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/special/exp2.h:20: bad fp exception: RN exp2(-0x1p+10)=0x1p-1024, want 0 got INEXACT|UNDERFLOW
+X src/math/special/exp2.h:21: bad fp exception: RN exp2(-0x1.004p+10)=0x1p-1025, want 0 got INEXACT|UNDERFLOW
+X src/math/special/exp2.h:22: bad fp exception: RN exp2(-0x1.0c8p+10)=0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/sanity/expm1l.h:2: RN expm1l(0x1.161868e18bc67782p+2) want 0x1.30712ed238c064a2p+6 got 0x1.30712ed238c064a6p+6 ulperr 2.355 = 0x1p+1 + 0x1.6b4c44p-2
+X src/math/sanity/expm1l.h:5: RN expm1l(0x1.288bbb0d6a1e5bdap+3) want 0x1.4ab477496e07b24ap+13 got 0x1.4ab477496e07b24ep+13 ulperr 1.583 = 0x1p+1 + -0x1.aa91d2p-2
+src/math/special/fmal.h:46: bad fp exception: RN fmal(-0x1p-10000,0x1.0000000000001p-6445,0x1p-16382)=0x1.fffffffffffffffcp-16383, want INEXACT|UNDERFLOW got INEXACT
+FAIL src/math/fmal.exe [status 1]
+X src/math/special/j0.h:7: RN j0(-0x1.33d132fd04a92p+1) want 0x1.092b2a541a68ep-19 got 0x1.092b2a541b1ap-19 ulperr 2833.704 = 0x1.624p+11 + -0x1.2ebdbp-2
+X src/math/special/j0.h:8: RN j0(-0x1.33d15297be06fp+1) want 0x1.5352913be3275p-26 got 0x1.5352913ddb41bp-26 ulperr 2064806.000 = 0x1.f81a6p+20 + 0x1.c281e2p-7
+X src/math/special/j0.h:9: RN j0(0x1.33d152e971b4p+1) want -0x1.19b7921f03c8ep-54 got -0x1.00209921727cbp-54 ulperr 450179413049344.000 = 0x1.996f9p+48 + 0x1.ece5dp-5
+X src/math/special/j0.h:10: RN j0(0x1.6148f5b2c2e45p+2) want -0x1.fbb40985f6e34p-56 got -0x1.ebcb069d486ccp-56 ulperr 279895217274880.000 = 0x1.fd205ep+47 + -0x1.1ac8a8p-2
+X src/math/special/j0.h:11: RN j0(0x1.14eb56cccdecap+3) want -0x1.6e8eeb22e5818p-54 got -0x1.6d2a820627412p-54 ulperr 24492348801024.000 = 0x1.64691cp+44 + -0x1.63ab44p-2
+X src/math/special/j0.h:12: RN j0(0x1.c071b22fbbafap+1023) want -0x1.a348b1f34dd1ap-526 got -0x1.a348b1f34d33dp-526 ulperr 2525.019 = 0x1.3bap+11 + 0x1.3153c2p-6
+X src/math/special/j0.h:13: RN j0(0x1.f7350b1701ef7p+0) want 0x1.f32b3a3640292p-3 got 0x1.f32b3a3640296p-3 ulperr 3.947 = 0x1p+2 + -0x1.b3bad8p-5
+X src/math/sanity/jn.h:8: RN jn(5, 0x1.1f9ef934745cbp-1) want 0x1.e274364abf2d5p-17 got 0x1.e274364abf2d2p-17, ulperr -2.504 = -0x1.8p+1 + 0x1.fbe5c8p-2
+X src/math/sanity/jnf.h:1: RN jnf(-2, -0x1.0223ap+3) want -0x1.863726p-4 got -0x1.86372ap-4, ulperr -2.009 = -0x1p+1 + -0x1.28885p-7
+X src/math/sanity/jnf.h:8: RN jnf(5, 0x1.1f9efap-1) want 0x1.e2743cp-17 got 0x1.e27442p-17, ulperr 2.537 = 0x1.8p+1 + -0x1.d9c372p-2
+X src/math/sanity/jnf.h:10: RN jnf(7, -0x1.5b86eap-1) want -0x1.b39a9cp-24 got -0x1.b39a98p-24, ulperr 1.621 = 0x1p+1 + -0x1.83c12p-2
+X src/math/special/lgamma.h:145: RN lgamma(-0x1.4p+1) want -0x1.ccbf9f5ed0f16p-5,-1 got -0x1.ccbf9f5ed0f2p-5,-1 ulperr -10.465 = -0x1.4p+3 + -0x1.dc4f24p-2
+X src/math/sanity/lgammaf.h:3: RN lgammaf(-0x1.0c34b4p+3) want -0x1.46d732p+3,-1 got -0x1.46d736p+3,-1 ulperr -1.621 = -0x1p+1 + 0x1.83dafep-2
+X src/math/sanity/lgammaf_r.h:3: RN lgammaf_r(-0x1.0c34b4p+3) want -0x1.46d732p+3,-1 got -0x1.46d736p+3,-1 ulperr -1.621 = -0x1p+1 + 0x1.83dafep-2
+X src/math/crlibm/pow.h:13: bad fp exception: RN pow(0x1p+1,-0x1.0c8p+10)=0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:72: bad fp exception: RN pow(0x1p-1074,0x1p+0)=0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:73: bad fp exception: RN pow(0x1p-1042,0x1p+0)=0x1p-1042, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:75: bad fp exception: RN pow(-0x1p-1074,0x1p+0)=-0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:76: bad fp exception: RN pow(-0x1p-1042,0x1p+0)=-0x1p-1042, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:284: bad fp exception: RN pow(0x1p-1073,0x1p+0)=0x1p-1073, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:300: bad fp exception: RN pow(0x1p-1024,0x1p+0)=0x1p-1024, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:304: bad fp exception: RN pow(0x1p-1023,0x1p+0)=0x1p-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:310: bad fp exception: RN pow(0x1.ffffffffffffcp-1023,0x1p+0)=0x1.ffffffffffffcp-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:313: bad fp exception: RN pow(0x1.ffffffffffffep-1023,0x1p+0)=0x1.ffffffffffffep-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:338: bad fp exception: RN pow(0x1p-537,0x1p+1)=0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:437: bad fp exception: RN pow(0x1p+1,-0x1.0c8p+10)=0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:498: bad fp exception: RN pow(0x1p+350,-0x1.8p+1)=0x1p-1050, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:499: bad fp exception: RN pow(0x1p+700,-0x1.8p+0)=0x1p-1050, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:516: bad fp exception: RN pow(0x1p+1023,-0x1p+0)=0x1p-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:544: bad fp exception: RN pow(-0x1p-1073,0x1p+0)=-0x1p-1073, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:548: bad fp exception: RN pow(-0x1p-1024,0x1p+0)=-0x1p-1024, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:551: bad fp exception: RN pow(-0x1p-1023,0x1p+0)=-0x1p-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:557: bad fp exception: RN pow(-0x1.ffffffffffffcp-1023,0x1p+0)=-0x1.ffffffffffffcp-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:560: bad fp exception: RN pow(-0x1.ffffffffffffep-1023,0x1p+0)=-0x1.ffffffffffffep-1023, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:581: bad fp exception: RN pow(-0x1p-537,0x1p+1)=0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:655: bad fp exception: RN pow(-0x1p+1,-0x1.0c8p+10)=0x1p-1074, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:695: bad fp exception: RN pow(-0x1p+350,-0x1.8p+1)=-0x1p-1050, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/pow.h:708: bad fp exception: RN pow(-0x1p+1023,-0x1p+0)=-0x1p-1023, want 0 got INEXACT|UNDERFLOW
+src/math/ucb/powf.h:103: bad fp exception: RU powf(0x1.fffffep+127,0x1p+0)=0x1.fffffep+127, want 0 got INEXACT|OVERFLOW
+X src/math/ucb/powf.h:530: bad fp exception: RN powf(0x1.fffff8p-127,0x1p+0)=0x1.fffff8p-127, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/powf.h:533: bad fp exception: RN powf(0x1.fffffcp-127,0x1p+0)=0x1.fffffcp-127, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/powf.h:719: bad fp exception: RN powf(-0x1.fffff8p-127,0x1p+0)=-0x1.fffff8p-127, want 0 got INEXACT|UNDERFLOW
+X src/math/ucb/powf.h:722: bad fp exception: RN powf(-0x1.fffffcp-127,0x1p+0)=-0x1.fffffcp-127, want 0 got INEXACT|UNDERFLOW
+FAIL src/math/powf.exe [status 1]
+X src/math/crlibm/sinh.h:84: RN sinh(0x1.d3e0d2f5d98d6p-2) want 0x1.e45428082fb8cp-2 got 0x1.e45428082fb8ap-2 ulperr -1.500 = -0x1p+1 + 0x1p-1
+X src/math/sanity/sinhl.h:1: RN sinhl(-0x1.02239f3c6a8f13dep+3) want -0x1.8e6152d2b112dcb8p+10 got -0x1.8e6152d2b112dcc2p+10 ulperr -4.567 = -0x1.4p+2 + 0x1.bb71ep-2
+X src/math/sanity/sinhl.h:2: RN sinhl(0x1.161868e18bc67782p+2) want 0x1.3463e73bcdaac0bep+5 got 0x1.3463e73bcdaac0c4p+5 ulperr 2.856 = 0x1.8p+1 + -0x1.25fab6p-3
+X src/math/sanity/sinhl.h:4: RN sinhl(-0x1.a206f0a19dcc3948p+2) want -0x1.5745bb86e8aecf3ep+8 got -0x1.5745bb86e8aecf44p+8 ulperr -3.322 = -0x1.8p+1 + -0x1.49a5aep-2
+X src/math/sanity/tgamma.h:4: RN tgamma(-0x1.a206f0a19dcc4p+2) want -0x1.9fd0c1ce12f14p-10 got -0x1.9fd0c1ce12f12p-10 ulperr 1.597 = 0x1p+1 + -0x1.9c637p-2
+X src/math/sanity/tgamma.h:7: RN tgamma(-0x1.a05cc754481d1p-2) want -0x1.d9a22b2f3f253p+1 got -0x1.d9a22b2f3f251p+1 ulperr 1.674 = 0x1p+1 + -0x1.4d79f4p-2
+X src/math/special/tgamma.h:47: RN tgamma(0x1p-53) want 0x1.fffffffffffffp+52 got 0x1.ffffffffffffdp+52 ulperr -2.423 = -0x1p+1 + -0x1.b0ee6p-2
+X src/math/special/tgamma.h:60: RN tgamma(-0x1.0000000000001p+0) want 0x1.fffffffffffffp+51 got 0x1.ffffffffffffdp+51 ulperr -2.154 = -0x1p+1 + -0x1.3c467ep-3
+X src/math/special/tgamma.h:62: RN tgamma(-0x1.0000000000003p+0) want 0x1.5555555555554p+50 got 0x1.5555555555552p+50 ulperr -1.642 = -0x1p+1 + 0x1.6e642cp-2
+X src/math/special/tgamma.h:66: RN tgamma(-0x1.ffffffffffffep+0) want 0x1.0000000000002p+50 got 0x1.0000000000004p+50 ulperr 2.154 = 0x1p+1 + 0x1.3c467ep-3
+X src/math/special/tgamma.h:68: RN tgamma(-0x1.0000000000001p+1) want -0x1.ffffffffffffcp+49 got -0x1.ffffffffffff7p+49 ulperr 5.309 = 0x1.4p+2 + 0x1.3c467ep-2
+X src/math/special/tgamma.h:72: RN tgamma(-0x1.7fffffffffffdp+1) want -0x1.c71c71c71c72ap+46 got -0x1.c71c71c71c72cp+46 ulperr -2.157 = -0x1p+1 + -0x1.4177f6p-3
+X src/math/special/tgamma.h:82: RN tgamma(-0x1.59fffffffffffp+7) want -0x1.46b1fa841aaa6p-997 got -0x1.46b1fa841aaa8p-997 ulperr -1.801 = -0x1p+1 + 0x1.979e28p-3
+X src/math/special/tgamma.h:83: RN tgamma(-0x1.5a00000000001p+7) want 0x1.46b1fa841a412p-997 got 0x1.46b1fa841a41p-997 ulperr -1.700 = -0x1p+1 + 0x1.333de2p-2
+X src/math/special/tgamma.h:84: RN tgamma(-0x1.5bfffffffffffp+7) want 0x1.e0a7b14f99fdbp-1005 got 0x1.e0a7b14f99fddp-1005 ulperr 1.579 = 0x1p+1 + -0x1.af416ap-2
+X src/math/special/tgamma.h:85: RN tgamma(-0x1.5c00000000001p+7) want -0x1.e0a7b14f9962ap-1005 got -0x1.e0a7b14f9962cp-1005 ulperr -1.685 = -0x1p+1 + 0x1.42ddc4p-2
+X src/math/special/tgamma.h:88: RN tgamma(-0x1.5ffffffffffffp+7) want 0x1.ff5df5f533fd3p-1020 got 0x1.ff5df5f533fd6p-1020 ulperr 2.513 = 0x1.8p+1 + -0x1.f234a4p-2
+X src/math/special/tgamma.h:119: RN tgamma(-0x1.8p+0) want 0x1.2e7fb0bcdf4f2p+1 got 0x1.2e7fb0bcdf4fp+1 ulperr -1.770 = -0x1p+1 + 0x1.d7697p-3
+X src/math/special/tgamma.h:136: RN tgamma(-0x1.02p+6) want -0x1.912276590832ep-298 got -0x1.912276590833p-298 ulperr -1.662 = -0x1p+1 + 0x1.59f79ap-2
+X src/math/special/tgamma.h:141: RN tgamma(-0x1.55p+7) want -0x1.7d2374dfcda7ap-1022 got -0x1.7d2374dfcda78p-1022 ulperr 1.778 = 0x1p+1 + -0x1.c68fa4p-3
+X src/math/special/y0.h:8: RN y0(0x1.c982eb8d417eap-1) want -0x1.af74bfa0f1304p-56 got -0x1p-55 ulperr -1416944204906496.000 = -0x1.422d02p+50 + 0x1.11721cp-2
+X src/math/special/y0.h:9: RN y0(0x1.c982eb8d417ebp-1) want 0x1.5666419c0f3c9p-54 got 0x1.2p-54 ulperr -957005015547904.000 = -0x1.b3320cp+49 + 0x1.dc02a8p-2
+X src/math/special/y0.h:10: RN y0(0x1.fa9534d98569bp+1) want 0x1.384a000f3fcecp-53 got 0x1.3004a968fceadp-53 ulperr -145502385471488.000 = -0x1.08aad4p+47 + 0x1.58e17p-6
+X src/math/special/y0.h:11: RN y0(0x1.fa9534d98569cp+1) want -0x1.8fa8956b4b481p-55 got -0x1.8f4eb84cc2a33p-55 ulperr 6175389646848.000 = 0x1.67747ap+42 + 0x1.54cfbep-2
+X src/math/special/y0.h:12: RN y0(0x1.c581dc4e72102p+2) want -0x1.14bb186dc408dp-52 got -0x1.16eb61aad4cacp-52 ulperr -38502565675008.000 = -0x1.18249ep+45 + -0x1.163cfp-2
+X src/math/special/y0.h:13: RN y0(0x1.c581dc4e72103p+2) want 0x1.e91b198d39ce2p-56 got 0x1.dac1abb064c09p-56 ulperr -252436132397056.000 = -0x1.cb2dbcp+47 + -0x1.ee1b6ep-2
+X src/math/sanity/y0f.h:2: RN y0f(0x1.161868p+2) want -0x1.293dbep-3 got -0x1.293dc2p-3 ulperr -1.910 = -0x1p+1 + 0x1.6ffc42p-4
+X src/math/special/y0f.h:7: RN y0f(0x1.0c4a3ap+0) want 0x1.ff138ep-4 got 0x1.ff1386p-4 ulperr -4.180 = -0x1.fffffep+1 + -0x1.71585ap-3
+X src/math/special/y0f.h:8: RN y0f(0x1.8ae5d4p-1) want -0x1.d88a5ap-4 got -0x1.d88a5p-4 ulperr 4.919 = 0x1.4p+2 + -0x1.4d601ap-4
+X src/math/special/y0f.h:9: RN y0f(0x1.fa9536p+1) want -0x1.da2946p-25 got -0x1.c5c23p-25 ulperr 668554.625 = 0x1.46716p+19 + -0x1.88a2bcp-2
+X src/math/sanity/ynf.h:6: RN ynf(3, 0x1.52efdp-1) want -0x1.2935d2p+4 got -0x1.2935d6p+4, ulperr -1.920 = -0x1p+1 + 0x1.47d13p-4
+X src/math/sanity/ynf.h:9: RN ynf(6, 0x1.8c5dbp-1) want -0x1.6dbc1cp+13 got -0x1.6dbc18p+13, ulperr 2.115 = 0x1p+1 + 0x1.d597eep-4
+src/regression/malloc-brk-fail.c:41: malloc(10000) failed (eventhough 64k is available to mmap): Out of memory
+FAIL src/regression/malloc-brk-fail-static.exe [status 1]
+src/regression/malloc-brk-fail.c:41: malloc(10000) failed (eventhough 64k is available to mmap): Out of memory
+FAIL src/regression/malloc-brk-fail.exe [status 1]
+src/regression/pthread_atfork-errno-clobber.c:23: (pid = fork()) == -1 failed: fork succeeded despite rlimit
+src/regression/pthread_atfork-errno-clobber.c:23: (pid = fork()) == -1 failed: fork succeeded despite rlimit
+FAIL src/regression/pthread_atfork-errno-clobber-static.exe [status 1]
+src/regression/pthread_atfork-errno-clobber.c:23: (pid = fork()) == -1 failed: fork succeeded despite rlimit
+src/regression/pthread_atfork-errno-clobber.c:23: (pid = fork()) == -1 failed: fork succeeded despite rlimit
+FAIL src/regression/pthread_atfork-errno-clobber.exe [status 1]
+FAIL src/regression/pthread_once-deadlock-static.exe [timed out]
+FAIL src/regression/pthread_once-deadlock.exe [timed out]

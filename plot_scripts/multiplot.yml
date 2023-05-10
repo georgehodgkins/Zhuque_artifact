@@ -1,0 +1,76 @@
+# multiplot.py configuration file
+
+# This is the default configuration and multiplot.py always load this file and
+# the "default" settings first. Other configuration files (YAML) can inherit the
+# default settings and override any of them.
+
+default: &default # config name, default
+  # configs under this set are only used by multiplot
+  multiplot: &multiplot
+    plotter: csvplot.bars # plotter name in module.function format
+    datafiles: [null] # list of datafiles to plot, each as a subplot
+    figsize: [10, 5] # figsize to contain all subplots
+    subplots: [1, 1] # subplot [rows, columns]
+    pltstyle: default # plt.style.use(pltstyle), ggplot, seaborn, bmh, etc.
+    xlims: [null] # list of [xmin, xmax], cyclic, null for automatic
+    ylims: [null] # same as xlims
+    xscales: [linear] # x-axis scales, linear, log, symlog, logit, etc., cyclic
+    yscales: [linear] # same as xscales
+    titles: [null] # subplot titles, cyclic, null for no title
+    xlabels: [null] # subplot xlabels, cyclic, null for no xlabel
+    ylabels: ["Y Label"] # subplot ylabels, cyclic, null for no ylabel
+    xticks_rots: [0] # X axis tick label rotation, cyclic
+    yticks_rots: [0] # same as xticks_rots
+    xticks_bottom_labels: [True] # X axis bottom tick label visibility, cyclic
+    yticks_left_labels: [True] # Y axis left tick label visibility, cyclic
+    xmajor_scalers: [null] # X axis major ticks scalers, null, or a float number
+    ymajor_scalers: [null] # cyclic, same as xmajor_scalers
+    xmajor_formats: [null] # X axis major ticks format, e.g. null, "{0:g}",
+    ymajor_formats: [null] # "{0:.1e} MB", "{:0,.2f} K", cyclic, same for Y axis
+    legend_on: -1 # null, all, or the index of subplots: 0 first, -1 last
+    legend_loc: best # ax.legend(..., loc=legend_loc, ...)
+    legend_ncol: 1 # ax.legend(..., ncol=legend_ncol, ...)
+    legend_bbox: null # ax.legend(..., bbox_to_anchor=legend_bbox, ...)
+    saveas: multiplot.pdf # output file name, can be .svg, .png, etc.
+
+    colors: ["#fc8900","#6e963b","#006a96"]
+    colortype: pm # options: pm, mm, fs, blk; set null to use colors above
+
+    # only line plots may use these
+    # linemarkers: ["^","o","P","H",">","*"] #linemarker for memcached
+    # linemarkers: ["v","^","o",">","H","P","*"] #linemarkers for vacation
+    # linemarkers: ["^","v","o",">","H","P","*"] #thread
+    linemarkers: ["^","o",">","H","P","*"] #memcached-abstract
+    linestyles:  ["-","-","-","-","-","-","-"]
+
+    # only bar plots may use these
+    barwidth: 0.65 # width for each bar in bar plot
+    # hatch patterns cycle through datasets
+    barhatches: [null,null,null,null,null,null,null]
+
+  # configs under this set pass through to matplotlib as rcParams
+  # be sure matplotlib understands them: matplotlib.org/users/customizing.html
+  # list of all: python3 -c "import matplotlib; print(matplotlib.rcParams)"
+  # they apply to all subplots
+  rcparams: &rcparams
+    xtick.labelsize: 13
+    ytick.labelsize: 18
+    axes.labelsize: 17
+    axes.titlesize: 17
+    legend.fontsize: 16
+    hatch.color: black
+    hatch.linewidth : 1.0
+    lines.linewidth: 2.0
+    lines.markersize: 8.0
+    lines.markeredgecolor: black
+    xtick.major.bottom: True
+    xtick.minor.bottom: False
+    ytick.major.left: True
+    ytick.minor.left: False
+    axes.axisbelow: True
+    legend.edgecolor: gray
+    figure.subplot.hspace: 0.5
+    figure.subplot.wspace: 0.2
+    savefig.bbox: tight
+    ps.fonttype: 42
+    pdf.fonttype: 42

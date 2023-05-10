@@ -1,0 +1,3 @@
+# this gets placed in /root in the container, to allow automatically sourcing directory-level configs
+add-auto-load-safe-path /wsp-tests
+add-auto-load-safe-path /apps

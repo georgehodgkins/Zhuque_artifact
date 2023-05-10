@@ -1,0 +1,5 @@
+Thread 0x668a700 serviced 6 files
+Thread 0x6e8b700 serviced 6 files
+Thread 0x5e89700 serviced 6 files
+Thread 0x5688700 serviced 6 files
+Thread 0x768c700 serviced 6 files

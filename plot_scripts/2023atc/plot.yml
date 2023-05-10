@@ -1,0 +1,175 @@
+#
+# multiplot.py always load the default settings in multiplot.yml
+# Settings below can inherit and override the default settings.
+#
+#
+
+
+
+all:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    #plotter: csvplot.bars
+    plotter: csvplot.bars_normalized
+    datafiles: ["2023atc/memcached/new-write75.csv", "2023atc/memcached/new-write25.csv", "2023atc/stamp/vacation.csv", "2023atc/stamp/yada.csv"]
+    figsize: [20, 8]
+    subplots: [2, 2]
+    titles: ["75% Insert, 25% Search-Global lock", "25% Insert, 75% Search-Global Lock", "75% Insert, 25% Search-Fine-grained lock", "25% Insert, 75% Search-Fine-grained Lock"]
+    #xscales: [log]
+    ylabels: ["Throughput (M/s)", "Throughput (M/s)", "Throughput (M/s)", "Throughput (M/s)"]
+    xlabels: ["Thread Count", "Thread Count", "Thread Count", "Thread Count"]
+    ymajor_scalers: [1.0]
+    ylims: [20, 20, 120, 120]
+    legend_loc: lower center
+    #legend_ncol: 1
+    #legend_bbox: [-1.7, 0.2]
+    legend_on: 0
+    legend_ncol: 6
+    legend_bbox: [1.1, -2.08]
+    normalize_to_column: Zhuque
+    #    barhatches: ["\\","/","\\","/","x","\\","/","-","\\\\"]
+  rcparams:
+    <<: *rcparams
+
+
+
+memcached-75-25:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    plotter: csvplot.bars
+    datafiles: ["2023atc/memcached/old-write75.csv", "2023atc/memcached/old-write25.csv", "2023atc/memcached/new-write75.csv", "2023atc/memcached/new-write25.csv"]
+    figsize: [20, 8]
+    subplots: [2, 2]
+    titles: ["75% Insert, 25% Search-Global lock", "25% Insert, 75% Search-Global Lock", "75% Insert, 25% Search-Fine-grained lock", "25% Insert, 75% Search-Fine-grained Lock"]
+    #xscales: [log]
+    ylabels: ["Throughput (M/s)", "Throughput (M/s)", "Throughput (M/s)", "Throughput (M/s)"]
+    xlabels: ["Thread Count", "Thread Count", "Thread Count", "Thread Count"]
+    ymajor_scalers: [1.0]
+    ylims: [20, 20, 120, 120]
+    legend_loc: lower center
+    #legend_ncol: 1
+    #legend_bbox: [-1.7, 0.2]
+    legend_on: 0
+    legend_ncol: 6
+    legend_bbox: [1.1, -2.08]
+    #    barhatches: ["\\","/","\\","/","x","\\","/","-","\\\\"]
+  rcparams:
+    <<: *rcparams
+
+
+python:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    plotter: csvplot.bars
+    #plotter: csvplot.bars_normalized
+    datafiles: ["2023atc/python/python.csv"]
+    subplots: [1, 1]
+    figsize: [10, 3]
+    titles: [""]
+    ylabels: ["Completion Time (s)"]
+    xlabels: [""]
+    legend_loc: lower center
+    legend_ncol: 1 
+    xticks_rots: [30]
+    barwidth: 0.45
+    #legend_bbox: [0.5, -0.58]
+    legend_bbox: [0.12, 0.65]
+
+    #normalize_to_column: Musl
+
+  rcparams:
+    <<: *rcparams
+
+
+libc-bench:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    #plotter: csvplot.bars
+    plotter: csvplot.bars_normalized
+    datafiles: ["2023atc/libc-bench/ben2.csv", "2023atc/libc-bench/ben3.csv"]
+    figsize: [7.5, 9]
+    subplots: [2, 1]
+    titles: ["Pthread Benchmarks", "Mmap Benchmarks"]
+    #xscales: [log]
+    ylabels: ["Normalized Performance", "Normalized Performance"]
+    xlabels: ["", ""]
+    ylims: [10, 5]
+    ymajor_scalers: [1.0]
+    xticks_rots: [20]
+    legend_loc: lower center
+    #legend_on: null
+    legend_ncol: 1
+    #legend_bbox: [-0.7, -0.72]
+    legend_bbox: [0.31, 0.42]
+    normalize_to_column: Musl(original kernel)
+  rcparams:
+    <<: *rcparams
+
+
+stamp:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    plotter: csvplot.bars
+    datafiles: ["2023atc/stamp/vacation.csv", "2023atc/stamp/yada.csv"]
+    figsize: [16, 3]
+    subplots: [1, 2]
+    titles: ["Vacation", "Yada"]
+    ylabels: ["Completion Time (s)", null]
+    xlabels: ["Thread Count", "Angle Constraint"]
+    ymajor_scalers: [1.0]
+    legend_on: 0
+    legend_loc: lower center
+    legend_ncol: 6
+    legend_bbox: [1.05, -0.62]
+    #legend_bbox: [0.70, 0.32]
+  rcparams:
+    <<: *rcparams
+
+
+eADR:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    plotter: csvplot.bars
+    datafiles: ["2023atc/eADR/eADR.csv"]
+    subplots: [1, 1]
+    figsize: [12, 3]
+    titles: [""]
+    ylabels: ["Throughput (M/s)"]
+    xlabels: [""]
+    legend_loc: lower center
+    legend_ncol: 3
+    legend_bbox: [0.5, -0.65]
+    #legend_bbox: [1.15, -0.0]
+
+  rcparams:
+    <<: *rcparams
+
+memcached-75:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    plotter: csvplot.bars
+    datafiles: ["2023atc/memcached/old-write75.csv", "2023atc/memcached/new-write75.csv"]
+    figsize: [20, 3]
+    subplots: [1, 2]
+    titles: ["75% Insert, 25% Search-Global lock", "75% Insert, 25% Search-Fine-grained lock"]
+    #xscales: [log]
+    ylabels: ["Throughput (M/s)", null]
+    xlabels: ["Thread Count", "Thread Count"]
+    ymajor_scalers: [1.0]
+    ylims: [16, 65]
+    legend_loc: lower center
+    #legend_ncol: 1
+    #legend_bbox: [-1.7, 0.2]
+    legend_on: 0
+    legend_ncol: 6
+    legend_bbox: [1.1, -0.68]
+    #    barhatches: ["\\","/","\\","/","x","\\","/","-","\\\\"]
+  rcparams:
+    <<: *rcparams

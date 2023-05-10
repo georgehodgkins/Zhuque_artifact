@@ -1,0 +1,17 @@
+1. Libc bench
+./multiplot.py -y 2022Eurosys-WSP/2023atc/plot.yml -c libc-bench3-new
+
+2. Python
+./multiplot.py -y 2022Eurosys-WSP/2023atc/plot.yml -c python
+
+3. Yada
+./multiplot.py -y 2022Eurosys-WSP/2023atc/plot.yml -c stamp
+
+4. Vacation
+./multiplot.py -y 2022Eurosys-WSP/2023atc/plot.yml -c stamp
+
+5. memcached results
+./multiplot.py -y 2022Eurosys-WSP/2023atc/plot.yml -c memcached-75-25
+
+6. eADR results
+./multiplot.py -y 2022Eurosys-WSP/2023atc/plot.yml -c eADR

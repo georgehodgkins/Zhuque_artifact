@@ -1,0 +1,327 @@
+Apply this patch to git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/bionic
+at the tag Ubuntu-4.15.0-161.169.
+diff --git a/arch/x86/entry/calling.h b/arch/x86/entry/calling.h
+index 1dbc62a96b85..68e339293113 100644
+--- a/arch/x86/entry/calling.h
++++ b/arch/x86/entry/calling.h
+@@ -97,7 +97,7 @@ For 32-bit we have the following conventions - kernel is built with
+ 
+ #define SIZEOF_PTREGS	21*8
+ 
+-.macro PUSH_AND_CLEAR_REGS rdx=%rdx rax=%rax save_ret=0
++.macro PUSH_REGS rdx rax save_ret
+ 	.if \save_ret
+ 	pushq	%rsi		/* pt_regs->si */
+ 	movq	8(%rsp), %rsi	/* temporarily store the return address in %rsi */
+@@ -124,7 +124,9 @@ For 32-bit we have the following conventions - kernel is built with
+ 	.if \save_ret
+ 	pushq	%rsi		/* return address on top of stack */
+ 	.endif
++.endm
+ 
++.macro CLEAR_REGS
+ 	/*
+ 	 * Sanitize registers of values that a speculation attack might
+ 	 * otherwise want to exploit. The lower registers are likely clobbered
+@@ -146,6 +148,11 @@ For 32-bit we have the following conventions - kernel is built with
+ 
+ .endm
+ 
++.macro PUSH_AND_CLEAR_REGS rdx=%rdx rax=%rax save_ret=0
++	PUSH_REGS rdx=\rdx, rax=\rax, save_ret=\save_ret
++	CLEAR_REGS
++.endm
++
+ .macro POP_REGS pop_rdi=1 skip_r11rcx=0
+ 	popq %r15
+ 	popq %r14
+diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
+index a93a1747eea9..7e0e353f29f0 100644
+--- a/arch/x86/entry/entry_64.S
++++ b/arch/x86/entry/entry_64.S
+@@ -203,6 +203,17 @@ ENTRY(entry_SYSCALL_64_stage2)
+ 	jmp	entry_SYSCALL_64_after_hwframe
+ END(entry_SYSCALL_64_stage2)
+ 
++/* Test for nonzero current, and call save_pigframe if true.
++ * Uses r15 as scratch/arg, then restores it from the kernel stack. */
++.macro PIGSYNC
++	movq PER_CPU_VAR(current_task), %r15
++	test %r15, %r15
++	jz 1f
++	call save_pigframe
++1:	
++	movq R15(%rsp), %r15
++.endm
++
+ ENTRY(entry_SYSCALL_64)
+ 	UNWIND_HINT_EMPTY
+ 	/*
+@@ -228,7 +239,9 @@ ENTRY(entry_SYSCALL_64)
+ GLOBAL(entry_SYSCALL_64_after_hwframe)
+ 	pushq	%rax				/* pt_regs->orig_ax */
+ 
+-	PUSH_AND_CLEAR_REGS rax=$-ENOSYS
++	PUSH_REGS rdx=%rdx rax=$-ENOSYS save_ret=0 
++	PIGSYNC
++	CLEAR_REGS
+ 
+ 	TRACE_IRQS_OFF
+ 
+@@ -541,7 +554,14 @@ END(irq_entries_start)
+ 1:
+ 	FENCE_SWAPGS_KERNEL_ENTRY
+ 2:
+-	PUSH_AND_CLEAR_REGS
++	PUSH_REGS rdx=%rdx rax=%rax save_ret=0
++	/* only pigsync if we are entering from userspace.
++	 * Must be done before clearing regs */
++	testb 	$3, CS(%rsp)
++	jz 1f
++	PIGSYNC
++1:
++	CLEAR_REGS
+ 	ENCODE_FRAME_POINTER
+ 
+ 	testb	$3, CS(%rsp)
+@@ -775,6 +795,66 @@ ENTRY(\sym)
+ END(\sym)
+ .endm
+ 
++/* 
++ * Save the register file to a user-designated region on kernel entry.
++ * Expects an iret frame on the top of the stack,
++ * and a valid task_struct pointer in r11.
++ */ 
++ENTRY(save_pigframe)
++	UNWIND_HINT_FUNC
++
++	/* load current.thread_info.pigframe, relying on the fact
++	 * that thread_info is the first member of task_struct
++	 */
++	movq PIGFRAME_TIF_OFF(%r15), %r15
++	/* only store the regs if pigbase is nonzero */
++	test %r15, %r15
++	jz 1f
++
++	/* We require the page to be mlock'd, so access should not fault.
++     * If it does, we deadlock the kernel. */
++	ASM_STAC
++	/* these should match the x86_64 offsets in struct pt_regs.
++	 *	We do not care about caller- vs callee-saved,
++	 *	because power failure clobbers everything
++	 */
++	movq %r14, R14(%r15)
++	movq %r13, R13(%r15)
++	movq %r12, R12(%r15)
++	movq %rbp, RBP(%r15)
++	movq %rbx, RBX(%r15)
++	movq %r11, R11(%r15)
++	movq %r10, R10(%r15)
++	movq %r9, R9(%r15)
++	movq %r8, R8(%r15)
++	movq %rax, RAX(%r15)	
++	movq %rcx, RCX(%r15)
++	movq %rdx, RDX(%r15)
++	movq %rsi, RSI(%r15)
++	/* rsi can now be scratch */
++	movq %rdi, RDI(%r15)
++	# save real r15 value
++	# stack addrs are one qword off from predefined offsets due to function call
++	movq 8+R15(%rsp), %rsi
++	movq %rsi, R15(%r15)
++	# save contents of iret frame
++	movq 8+RIP(%rsp), %rsi
++	movq %rsi, RIP(%r15)
++	movq 8+CS(%rsp), %rsi
++	movq %rsi, CS(%r15)
++	movq 8+EFLAGS(%rsp), %rsi
++	movq %rsi, EFLAGS(%r15)
++	movq 8+RSP(%rsp), %rsi
++	movq %rsi, RSP(%r15)
++	# restore rsi
++	movq RSI(%r15), %rsi
++	# re-enable smap
++	ASM_CLAC
++1:
++	UNWIND_HINT_FUNC
++	ret	
++END(save_pigframe)
++
+ /* Make sure APIC interrupt handlers end up in the irqentry section: */
+ #define PUSH_SECTION_IRQENTRY	.pushsection .irqentry.text, "ax"
+ #define POP_SECTION_IRQENTRY	.popsection
+@@ -1381,7 +1461,7 @@ ENTRY(nmi)
+ 	pushq	1*8(%rdx)	/* pt_regs->rip */
+ 	UNWIND_HINT_IRET_REGS
+ 	pushq   $-1		/* pt_regs->orig_ax */
+-	PUSH_AND_CLEAR_REGS rdx=(%rdx)
++	PUSH_AND_CLEAR_REGS rdx=(%rdx) 
+ 	ENCODE_FRAME_POINTER
+ 
+ 	/*
+diff --git a/arch/x86/include/asm/thread_info.h b/arch/x86/include/asm/thread_info.h
+index a77f0ad96d94..2f79f4596dd2 100644
+--- a/arch/x86/include/asm/thread_info.h
++++ b/arch/x86/include/asm/thread_info.h
+@@ -56,18 +56,28 @@ struct task_struct;
+ struct thread_info {
+ 	unsigned long		flags;		/* low level flags */
+ 	u32			status;		/* thread synchronous flags */
++	u32			pad; /* pigframe must be 8B aligned */
++	void* 		pigframe;
+ };
+ 
+ #define INIT_THREAD_INFO(tsk)			\
+ {						\
+ 	.flags		= 0,			\
++	.pigframe	= NULL,	\
+ }
+ 
+ #define init_stack		(init_thread_union.stack)
+ 
++inline int __set_pigframe(struct thread_info*, void*);
++inline int __get_pigframe(struct thread_info*, void**);
++
++#define SET_PIGFRAME __set_pigframe
++#define GET_PIGFRAME __get_pigframe
++
+ #else /* !__ASSEMBLY__ */
+ 
+ #include <asm/asm-offsets.h>
++#define PIGFRAME_TIF_OFF 2*8
+ 
+ #endif
+ 
+diff --git a/arch/x86/kernel/Makefile b/arch/x86/kernel/Makefile
+index 85ef23f89196..d2a436dd8891 100644
+--- a/arch/x86/kernel/Makefile
++++ b/arch/x86/kernel/Makefile
+@@ -146,5 +146,5 @@ ifeq ($(CONFIG_X86_64),y)
+ 	obj-$(CONFIG_CALGARY_IOMMU)	+= pci-calgary_64.o tce_64.o
+ 
+ 	obj-$(CONFIG_PCI_MMCONFIG)	+= mmconf-fam10h_64.o
+-	obj-y				+= vsmp_64.o
++	obj-y				+= vsmp_64.o pigframe.o
+ endif
+diff --git a/arch/x86/kernel/pigframe.c b/arch/x86/kernel/pigframe.c
+new file mode 100644
+index 000000000000..71b3114a3b1b
+--- /dev/null
++++ b/arch/x86/kernel/pigframe.c
+@@ -0,0 +1,13 @@
++#include <linux/uaccess.h>
++#include <asm/thread_info.h>
++
++inline int __set_pigframe(struct thread_info* t, void* f) {
++	t->pigframe = f;
++	return 0;
++}
++
++inline int __get_pigframe(struct thread_info* t, void** __user fa) {
++	__copy_to_user(fa, &t->pigframe, sizeof(*fa));
++	return 0;
++}
++
+diff --git a/debian.master/changelog b/debian.master/changelog
+index 02cb44bf82ab..1e6cf17d2171 100644
+--- a/debian.master/changelog
++++ b/debian.master/changelog
+@@ -1,4 +1,4 @@
+-linux (4.15.0-161.169) bionic; urgency=medium
++linux (4.15.0-161.169+pigframe) bionic; urgency=medium
+ 
+   * bionic/linux: 4.15.0-161.169 -proposed tracker (LP: #1947358)
+ 
+diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
+index aeabb547702c..29344ebb8b50 100644
+--- a/include/uapi/linux/prctl.h
++++ b/include/uapi/linux/prctl.h
+@@ -220,6 +220,9 @@ struct prctl_mm_map {
+ # define PR_SPEC_DISABLE		(1UL << 2)
+ # define PR_SPEC_FORCE_DISABLE		(1UL << 3)
+ 
++#define PR_SET_PIGFRAME 54
++#define PR_GET_PIGFRAME 55
++
+ /*
+  * Control the LSM specific peer information
+  *
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 9c4913d685c3..085a9f61d04e 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -70,6 +70,7 @@
+ #include <linux/uaccess.h>
+ #include <asm/io.h>
+ #include <asm/unistd.h>
++#include <asm/thread_info.h>
+ 
+ #ifndef SET_UNALIGN_CTL
+ # define SET_UNALIGN_CTL(a, b)	(-EINVAL)
+@@ -119,6 +120,12 @@
+ #ifndef SVE_GET_VL
+ # define SVE_GET_VL()		(-EINVAL)
+ #endif
++#ifndef SET_PIGFRAME
++#define SET_PIGFRAME(p, a) (-ENOSYS)
++#endif
++#ifndef GET_PIGFRAME
++#define GET_PIGFRAME(p, ap) (-ENOSYS)
++#endif
+ 
+ /*
+  * this is where the system-wide overflow UID and GID are defined, for
+@@ -2217,6 +2224,39 @@ int __weak arch_prctl_spec_ctrl_set(struct task_struct *t, unsigned long which,
+ 	return -EINVAL;
+ }
+ 
++static int prctl_set_pigframe(struct task_struct* p, void* frame) {
++	int err = 0;
++	struct mm_struct* mm = p->mm;
++	struct vm_area_struct* vma;
++
++	if ((unsigned long) frame & (PAGE_SIZE-1))
++		return -EINVAL;
++	
++	if (!access_ok(VERIFY_WRITE, frame, PAGE_SIZE)) 
++		return -EFAULT;
++	
++	down_read(&mm->mmap_sem);
++	
++	vma = find_vma(mm, (unsigned long) frame);
++	if (!vma) {
++		err = -EFAULT;
++		goto out;
++	}
++
++	err = SET_PIGFRAME(&p->thread_info, frame);
++
++out:
++	up_read(&mm->mmap_sem);
++	return err;
++}
++
++static int prctl_get_pigframe(struct task_struct* p, void** __user frame_addr) {
++		if (!access_ok(VERIFY_WRITE, frame_addr, sizeof(void*)))
++			return -EFAULT;
++
++		return GET_PIGFRAME(&p->thread_info, frame_addr);
++}
++
+ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+ 		unsigned long, arg4, unsigned long, arg5)
+ {
+@@ -2435,6 +2475,12 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+ 			return -EINVAL;
+ 		error = arch_prctl_spec_ctrl_set(me, arg2, arg3);
+ 		break;
++	case PR_SET_PIGFRAME:
++		error = prctl_set_pigframe(me, (void*) arg2);
++		break;
++	case PR_GET_PIGFRAME:
++		error = prctl_get_pigframe(me, (void** __user) arg2);
++		break;
+ 	default:
+ 		error = -EINVAL;
+ 		break;

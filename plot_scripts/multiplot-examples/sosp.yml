@@ -1,0 +1,58 @@
+#
+# multiplot.py always load the default settings in multiplot.yml
+# Settings below can inherit and override the default settings.
+#
+
+fileops: # customized config name
+  <<: *default # inherit and override default settings
+  multiplot:
+    <<: *multiplot # inherit and override default.multiplot settings
+    plotter: csvplot.bars
+    datafiles: ["multiplot-examples/fileops.sosp.csv"]
+    subplots: [1, 1]
+    figsize: [10, 3]
+    ylabels: ["Latency (ms)"]
+    legend_ncol: 3
+    legend_loc: best
+    ylims: [[0, 25]]
+  rcparams:
+    <<: *rcparams # inherit and override default.rcparams settings
+
+
+fio:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    plotter: csvplot.lines
+    datafiles: ["multiplot-examples/fio_rd.sosp.csv", "multiplot-examples/fio_wr.sosp.csv"]
+    figsize: [10, 3]
+    subplots: [1, 2]
+    titles: ["FIO 4k Read", "FIO 4k Write"]
+    xscales: [log]
+    ylabels: ["Bandwidth (GB/s)", null]
+    ymajor_scalers: [1.0]
+    ymajor_formats: ["{0:g}"]
+    legend_loc: lower center
+    legend_ncol: 3
+    legend_bbox: [-0.1, -0.5]
+  rcparams:
+    <<: *rcparams
+
+
+apptput:
+  <<: *default
+  multiplot:
+    <<: *multiplot
+    plotter: csvplot.bars_normalized
+    datafiles: ["multiplot-examples/tput.sosp.csv"]
+    subplots: [1, 1]
+    figsize: [10, 2.5]
+    titles: ["Application Throughput"]
+    ylabels: ["Normalized Ops/s"]
+    legend_loc: lower center
+    legend_ncol: 3
+    legend_bbox: [0.5, -0.61]
+
+    normalize_to_column: NOVA # a config only used by bars_normalized() plotter
+  rcparams:
+    <<: *rcparams

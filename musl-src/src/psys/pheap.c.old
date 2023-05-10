@@ -1,0 +1,383 @@
+#include "psys-impl.h"
+
+#include <errno.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <assert.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <syscall.h>
+
+// don't warn about math with void pointers
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
+static void* min_address = NULL;
+static void* max_address = NULL;
+static void* max_brk = NULL;
+static uint64_t page_size = 0;
+static int heapfd = -1;
+
+/*
+ * Freelist functions
+ */
+
+// freelist node
+struct node {
+   uint64_t addr;
+   size_t size;
+   struct node *next;
+};
+
+
+struct node *nodehead = NULL;
+struct node *current = NULL;
+
+/*
+//display the list
+static void printList(void) {
+   struct node *ptr = nodehead;
+   printf("\n[ ");
+	
+   //start from the beginning
+   while(ptr != NULL) {
+      printf("(%lu,%lu) ",ptr->addr,ptr->size);
+      ptr = ptr->next;
+   }
+	
+   printf(" ]");
+}
+*/
+
+//insert link at the first location
+static int insertFirst(void* addr, size_t size) {
+   //create a link
+   struct node *link = (struct node*) ((uint64_t)addr);
+
+   if(link == NULL)
+	return -1;   
+   link->addr = (uint64_t) addr;
+   link->size = size;
+	
+   //point it to old first node
+   link->next = nodehead;
+	
+   //point first to new first node
+   nodehead = link;
+
+   return 0;
+}
+
+/*
+//delete first item
+static struct node* deleteFirst(void) {
+
+   //save reference to first link
+   struct node *tempLink = nodehead;
+	
+   //mark next to first link as first 
+   nodehead = nodehead->next;
+	
+   //return the deleted link
+   return tempLink;
+}
+
+//is list empty
+static bool isEmpty(void) {
+   return nodehead == NULL;
+}
+
+
+static int length(void) {
+   int length = 0;
+   struct node *current;
+	
+   for(current = nodehead; current != NULL; current = current->next) {
+      length++;
+   }
+	
+   return length;
+}
+*/
+
+//find a link with given key
+static struct node* find(size_t size) {
+
+   //start from the first link
+   struct node* current = nodehead;
+
+   //if list is empty
+   if(nodehead == NULL) {
+      return NULL;
+   }
+
+   //navigate through list
+   while(current->size<size) {
+
+      //if it is last node
+      if(current->next == NULL) {
+         return NULL;
+      } else {
+         //go to next link
+         current = current->next;
+      }
+   }      
+	
+   //if data found, return the current Link
+   return current;
+}
+
+//delete a link with given key
+static struct node* delete(void* ptr) {
+
+   //start from the first link
+   struct node* current = nodehead;
+   struct node* previous = nodehead;
+	
+   //if list is empty
+   if(nodehead == NULL) {
+      return NULL;
+   }
+
+
+   if(ptr == nodehead){
+	   current = ptr;
+   }
+   else{
+     //navigate through list
+     while(previous->next != ptr) {
+
+      //if it is last node
+      if(current->next == NULL) {
+	  break;
+      } else {
+         //store reference to current link
+         previous = current;
+         //move to next link
+         current = current->next;
+      }
+     }
+   }
+
+   //found a match, update the link
+   if(current == nodehead) {
+      //change first to point to next link
+      nodehead = nodehead->next;
+   } else {
+      //bypass the current link
+      previous->next = current->next;
+   }    
+	
+   return current;
+}
+
+void pmem_meta_is_valid (void) {
+	assert(max_brk > min_address);
+	assert(max_address > max_brk);
+	assert(ProcessCtx->heapRoot == min_address);
+	assert(ProcessCtx->heapBrk >= min_address && ProcessCtx->heapBrk < max_brk);
+	assert(ProcessCtx->heapCursor >= max_brk && ProcessCtx->heapCursor < max_address);
+}
+
+bool is_in_pheap(void* addr) {
+	return (addr >= min_address && addr < max_address);
+}
+
+/*
+ * Original musl mmap
+ */
+static void dummy(void) { }
+weak_alias(dummy, __vm_wait);
+
+#define UNIT SYSCALL_MMAP2_UNIT
+#define OFF_MASK ((-0x2000ULL << (8*sizeof(syscall_arg_t)-1)) | (UNIT-1))
+void* _v_mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
+{
+	long ret;
+	if (off & OFF_MASK) {
+		errno = EINVAL;
+		return MAP_FAILED;
+	}
+	if (len >= PTRDIFF_MAX) {
+		errno = ENOMEM;
+		return MAP_FAILED;
+	}
+	if (flags & MAP_FIXED) {
+		__vm_wait();
+	}
+#ifdef SYS_mmap2
+	ret = __syscall(SYS_mmap2, start, len, prot, flags, fd, off/UNIT);
+#else
+	ret = __syscall(SYS_mmap, start, len, prot, flags, fd, off);
+#endif
+	/* Fixup incorrect EPERM from kernel. */
+	if (ret == -EPERM && !start && (flags&MAP_ANON) && !(flags&MAP_FIXED))
+		ret = -ENOMEM;
+	return (void *)__syscall_ret(ret);
+}
+
+/*
+ * Allocation Functions
+ */
+
+int get_heapfd(void) {return heapfd;}
+
+void* init_pheap(int fd, size_t len, void* addr)
+{
+	page_size = (uint64_t) sysconf(_SC_PAGESIZE);
+
+	heapfd = fd;
+	assert(min_address == NULL);
+
+	struct stat stat;
+	ERRNO_REPORT_Z_NR(fstat, heapfd, &stat);
+	assert((size_t) stat.st_size == len && "Heap wrong size!");
+	
+	void *mem;
+#ifdef REAL_PMEM
+	int flags = MAP_SHARED_VALIDATE | MAP_SYNC;
+#else
+	int flags = MAP_SHARED;
+#endif
+
+	if (addr) { // restoring existing heap
+		mem = _v_mmap(addr, len, PROT_READ|PROT_WRITE,
+				flags | MAP_FIXED_NOREPLACE, heapfd, 0);
+		assert(mem == addr);
+	} else {
+		mem = _v_mmap(NULL, len, PROT_READ|PROT_WRITE, flags, heapfd, 0);
+		assert(mem != MAP_FAILED);
+		ProcessCtx->heapBrk = NULL;
+	}
+	
+	min_address = mem;
+	max_address = (char*)mem + len;
+	max_brk = (char*)mem + page_size*PMemBrkPages;
+
+	if (!ProcessCtx->heapBrk) ProcessCtx->heapBrk = min_address;
+	else assert(ProcessCtx->heapBrk >= min_address && ProcessCtx->heapBrk < max_brk); 
+	
+
+	return mem;
+}
+
+void * _p_mmap (void *addr, size_t len, int prot, int flags, int fd, off_t offset)
+{
+	FAAI_CHECK_INIT();
+
+	//printf("%p %zu %d %d %d %d\n", addr, len, prot, flags, fd, offset);
+
+	int mapano = flags & MAP_ANONYMOUS;
+	if( !(atomic_load(&pStat) & _FAAI_ACTIVE_)  || mapano != MAP_ANONYMOUS) {
+		void* ptr = _v_mmap(addr, len, prot, flags, fd, offset);
+		return ptr;
+	}
+
+	// align len to page size, for POSIX compliance
+	if (len % page_size)
+		len += (page_size - len%page_size);
+
+	assert(!(len % page_size));
+/*
+	if(((char*) ProcessCtx->heapCursor + len + sizeof(struct node))< (char*) max_address){	
+	  void* ptr = (void*) ((char*) ProcessCtx->heapCursor + sizeof(struct node));
+	  ProcessCtx->heapCursor += len + sizeof(struct node);
+	  return ptr;
+	}
+
+
+	struct node *freenode = find(len);
+ 	if(freenode!=NULL){
+		uint64_t addr = freenode->addr;
+		delete(freenode);
+		return (void*) (addr + sizeof(struct node));
+	}
+*/
+	if((ProcessCtx->heapCursor + len) < max_address){	
+	  void* ptr = (ProcessCtx->heapCursor);
+	  assert( !((uint64_t) ptr & (page_size-1)) && "Mmap return misaligned!");
+	  ProcessCtx->heapCursor += len;
+	  assert( !((uint64_t) ProcessCtx->heapCursor & (page_size-1)) && "Heap cursor misaligned!");
+	  return ptr;
+	}
+
+	return NULL;
+}
+
+int _p_munmap (void *addr, size_t len){
+	FAAI_CHECK_INIT();
+
+	if (!(atomic_load(&pStat) & _FAAI_ACTIVE_) || addr < max_brk || addr > max_address) {
+		return syscall(SYS_munmap, addr, len);
+	}
+
+	if(addr == ProcessCtx->heapCursor){
+		ProcessCtx->heapCursor = (void*) ( ((char*) ProcessCtx->heapCursor)
+				- (len - sizeof(struct node)) );
+		return 0;
+	}
+	
+	int ret = insertFirst((void*) ((char*)addr - sizeof(struct node)), len);
+	int mode = FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE;
+	fallocate(heapfd, mode, (char*)addr -(char*) min_address, len);
+
+	return ret;
+}
+
+int _p_brk (void *addr)
+{
+	uintptr_t nbrk = _p_sys_brk((uintptr_t)addr);
+	return (nbrk >= (uintptr_t) addr) ? 0 : -1;
+}
+
+// we need to simulate the syscall semantics because it is used directly by mallocng
+uintptr_t _p_sys_brk (uintptr_t addr) {
+	FAAI_CHECK_INIT();
+	
+	if (atomic_load(&pStat) & _FAAI_ACTIVE_) {
+		if (addr > (uintptr_t) max_brk || addr < (uintptr_t) ProcessCtx->heapBrk) {   
+			return (uintptr_t) ProcessCtx->heapBrk;
+		} else {
+			ProcessCtx->heapBrk = (void*) addr;
+			return addr;
+		}
+	} else {
+		return (uintptr_t) __syscall(SYS_brk, addr);
+	}
+}
+/*
+static void* orig_sbrk (intptr_t inc) {
+	if (inc) return (void *)__syscall_ret(-ENOMEM);
+	return (void *)__syscall(SYS_brk, 0);
+}
+*/
+void* _p_sbrk (intptr_t increment)
+{
+	// this is to match existing musl semantics
+	// kind of weird tho
+	if (!increment) return (void*) _p_sys_brk(0);
+	else return (void*) __syscall_ret(-ENOMEM);
+	/*FAAI_CHECK_INIT();
+
+	if (atomic_load(&pStat) & _FAAI_ACTIVE_) {
+	  void *oldbrk;
+	  oldbrk = ProcessCtx->heapBrk;
+	  if ((increment > 0 && ((char*) oldbrk) + increment > (char*) max_brk) ||
+			(increment < 0 && ((char*) oldbrk) + increment < (char*) min_address)) {
+		  errno = ENOMEM;
+		  return (void *) -1;
+	  } else {
+		  ProcessCtx->heapBrk = (void*) ((char*) ProcessCtx->heapBrk + increment);
+		  return oldbrk;
+	  }
+	} else {
+		return orig_sbrk(increment);
+	}*/
+}
+
+#pragma GCC diagnostic pop

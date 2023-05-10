@@ -1,0 +1,1595 @@
+diff --git a/src/internal/atomic_clang_c11.h b/src/internal/atomic_clang_c11.h
+new file mode 100644
+index 0000000..bb3629d
+--- /dev/null
++++ b/src/internal/atomic_clang_c11.h
+@@ -0,0 +1,82 @@
++#ifndef _STDATOMIC_CLANG_C11_H_
++#define _STDATOMIC_CLANG_C11_H_ 1
++
++#include <atomic_stub.h>
++
++#define ATOMIC_VAR_INIT(...) __VA_ARGS__
++#define atomic_init __c11_atomic_init
++
++/* Map operations to the special builtins that clang provides. */
++
++/* Map all non-explicit macros to the builtin with forced memory order. */
++#define atomic_fetch_add(X, Y)                  __c11_atomic_fetch_add((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_sub(X, Y)                  __c11_atomic_fetch_sub((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_and(X, Y)                  __c11_atomic_fetch_and((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_or(X, Y)                   __c11_atomic_fetch_or((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_xor(X, Y)                  __c11_atomic_fetch_xor((X), (Y), memory_order_seq_cst)
++#define atomic_load(X)                          __c11_atomic_load((X), memory_order_seq_cst)
++#define atomic_store(X, V)                      __c11_atomic_store((X), (V), memory_order_seq_cst)
++#define atomic_exchange(X, V)                   __c11_atomic_exchange((X), (V), memory_order_seq_cst)
++#define atomic_compare_exchange_weak(X, E, V)   __c11_atomic_compare_exchange_weak((X), (E), (V), memory_order_seq_cst, memory_order_seq_cst)
++#define atomic_compare_exchange_strong(X, E, V) __c11_atomic_compare_exchange_strong((X), (E), (V), memory_order_seq_cst, memory_order_seq_cst)
++
++/* Map allexplicit macros to the corresponding builtin. */
++#define atomic_fetch_add_explicit                                  __c11_atomic_fetch_add
++#define atomic_fetch_sub_explicit                                  __c11_atomic_fetch_sub
++#define atomic_fetch_and_explicit                                  __c11_atomic_fetch_and
++#define atomic_fetch_or_explicit                                   __c11_atomic_fetch_or
++#define atomic_fetch_xor_explicit                                  __c11_atomic_fetch_xor
++#define atomic_load_explicit                                       __c11_atomic_load
++#define atomic_store_explicit                                      __c11_atomic_store
++#define atomic_exchange_explicit                                   __c11_atomic_exchange
++#define atomic_compare_exchange_strong_explicit                    __c11_atomic_compare_exchange_strong
++#define atomic_compare_exchange_weak_explicit                      __c11_atomic_compare_exchange_weak
++
++#define INSTANTIATE_STUB_LF(N, T)                                       \
++T __impl_fetch_add_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_add(_X, _V, _mo);                           \
++}                                                                       \
++T __impl_fetch_sub_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_sub(_X, _V, _mo);                           \
++}                                                                       \
++T __impl_fetch_and_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_and(_X, _V, _mo);                           \
++}                                                                       \
++T __impl_fetch_xor_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_xor(_X, _V, _mo);                           \
++}                                                                       \
++T __impl_fetch_or_ ## N(_Atomic(T)* _X, T const _V, int _mo) {          \
++  return __c11_atomic_fetch_or(_X, _V, _mo);                            \
++}                                                                       \
++T __impl_add_fetch_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_add(_X, _V, _mo) + _V;                      \
++}                                                                       \
++T __impl_sub_fetch_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_sub(_X, _V, _mo) - _V;                      \
++}                                                                       \
++T __impl_and_fetch_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_and(_X, _V, _mo) & _V;                      \
++}                                                                       \
++T __impl_xor_fetch_ ## N(_Atomic(T)* _X, T const _V, int _mo) {         \
++  return __c11_atomic_fetch_xor(_X, _V, _mo) ^ _V;                      \
++}                                                                       \
++T __impl_or_fetch_ ## N(_Atomic(T)* _X, T const _V, int _mo) {          \
++  return __c11_atomic_fetch_or(_X, _V, _mo) | _V;                       \
++}                                                                       \
++T __impl_load_ ## N(_Atomic(T)* _X, int _mo) {                          \
++  return __c11_atomic_load(_X, _mo);                                    \
++}                                                                       \
++void __impl_store_ ## N(_Atomic(T)* _X, T const _V, int _mo) {          \
++  __c11_atomic_store(_X, _V, _mo);                                      \
++}                                                                       \
++T __impl_exchange_ ## N(_Atomic(T)* _X, T const _V, int _mo) {          \
++  return __c11_atomic_exchange(_X, _V, _mo);                            \
++}                                                                       \
++_Bool __impl_compare_exchange_ ## N(_Atomic(T)* _X, T* _E, T const _V, int _mos, int _mof) { \
++  return __c11_atomic_compare_exchange_strong(_X, _E, _V, _mos, _mof);  \
++}                                                                       \
++ INSTANTIATE_STUB_NAND(N, T)
++
++#define INSTANTIATE_STUB(N, T) INSTANTIATE_STUB_ ## N(T)
++
++#endif
+diff --git a/src/internal/atomic_constants.h b/src/internal/atomic_constants.h
+new file mode 100644
+index 0000000..327241b
+--- /dev/null
++++ b/src/internal/atomic_constants.h
+@@ -0,0 +1,162 @@
++#ifndef _STDATOMIC_ATOMIC_CONSTANTS_H_
++#define _STDATOMIC_ATOMIC_CONSTANTS_H_ 1
++
++#include <stdint.h>
++
++#if !defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_1) || __GNUC__ < 4
++# error "this implementation of stdatomic need support that is compatible with the gcc ABI"
++#endif
++
++/* gcc 4.7 and 4.8 implement atomic operations but not atomic
++   types. This test is meant to stay simple, we don't know of any
++   other compiler that fakes to be gcc 4.[78] or 4.[78].x */
++#if !defined(__ATOMIC_RELAXED) && __GNUC__ == 4 && __GNUC_MINOR__ < 7
++#undef __ATOMIC_FORCE_SYNC
++#define __ATOMIC_FORCE_SYNC 1
++#endif
++
++#ifdef __SIZEOF_INT128__
++# define __UINT128__ 1
++typedef __uint128_t __impl_uint128_t;
++#else
++# define __UINT128__ 0
++typedef struct { uint64_t a[2]; } __impl_uint128_t;
++#endif
++
++#define __atomic_align(T)                                       \
++(sizeof(T) == 1 ?  __alignof__(uint8_t)                         \
++ : (sizeof(T) == 2 ?  __alignof__(uint16_t)                     \
++    : (sizeof(T) == 4 ?  __alignof__(uint32_t)                  \
++       : ((sizeof(T) == 8) ?  __alignof__(uint64_t)             \
++          : ((sizeof(T) == 16) ?  __alignof__(__impl_uint128_t) \
++             : __alignof__(T))))))
++
++#if __ATOMIC_FORCE_SYNC
++/* There is no compiler support for _Atomic type qualification, so we
++   use the type specifier variant. The idea is to use a one element
++   array to ensure that such an _Atomic(something) can never be used
++   in operators.
++
++   Underneath we will use uintXX_t for special cases. To be sure that
++   no bad things can happen, then, we ensure that the alignment for
++   these special cases is as wide as possible, namely sizeof the
++   type. */
++#define _Atomic(T) __typeof__(T volatile[1])
++#define _Atomic_aligned(T) __attribute__ ((__aligned__(__atomic_align(T)))) __typeof__(T[1])
++#endif
++
++#ifndef __ATOMIC_RELAXED
++#define __ATOMIC_RELAXED 0
++#endif
++#ifndef __ATOMIC_CONSUME
++#define __ATOMIC_CONSUME 1
++#endif
++#ifndef __ATOMIC_ACQUIRE
++#define __ATOMIC_ACQUIRE 2
++#endif
++#ifndef __ATOMIC_RELEASE
++#define __ATOMIC_RELEASE 3
++#endif
++#ifndef __ATOMIC_ACQ_REL
++#define __ATOMIC_ACQ_REL 4
++#endif
++#ifndef __ATOMIC_SEQ_CST
++#define __ATOMIC_SEQ_CST 5
++#endif
++
++enum memory_order {
++	memory_order_relaxed = __ATOMIC_RELAXED,
++	memory_order_consume = __ATOMIC_CONSUME,
++	memory_order_acquire = __ATOMIC_ACQUIRE,
++	memory_order_release = __ATOMIC_RELEASE,
++	memory_order_acq_rel = __ATOMIC_ACQ_REL,
++	memory_order_seq_cst = __ATOMIC_SEQ_CST,
++};
++typedef enum memory_order memory_order;
++
++#ifndef __GCC_ATOMIC_BOOL_LOCK_FREE
++#define __GCC_ATOMIC_BOOL_LOCK_FREE 2
++#define __GCC_ATOMIC_CHAR_LOCK_FREE 2
++#define __GCC_ATOMIC_SHORT_T_LOCK_FREE 2
++# if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16)
++# define __GCC_ATOMIC_INT_T_LOCK_FREE 2
++# define __GCC_ATOMIC_LONG_T_LOCK_FREE 2
++# define __GCC_ATOMIC_LLONG_T_LOCK_FREE 2
++# define __GCC_ATOMIC_POINTER_T_LOCK_FREE 2
++# define __GCC_ATOMIC_CHAR16_T_LOCK_FREE 2
++# define __GCC_ATOMIC_CHAR32_T_LOCK_FREE 2
++# define __GCC_ATOMIC_WCHAR_T_LOCK_FREE 2
++# elsif defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8)
++# define __GCC_ATOMIC_INT_T_LOCK_FREE ((UINT_MAX <= 0xFFFFFFFFFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_LONG_T_LOCK_FREE ((ULONG_MAX <= 0xFFFFFFFFFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_LLONG_T_LOCK_FREE ((ULLONG_MAX <= 0xFFFFFFFFFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_POINTER_T_LOCK_FREE ((UINTPTR_MAX <= 0xFFFFFFFFFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_CHAR16_T_LOCK_FREE ((UINT_LEAST16_MAX <= 0xFFFFFFFFFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_CHAR32_T_LOCK_FREE ((UINT_LEAST32_MAX <= 0xFFFFFFFFFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_WCHAR_T_LOCK_FREE ((WCHAR_MAX <= 0xFFFFFFFFFFFFFFFFU) ? 2 : 0)
++# elsif defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
++# define __GCC_ATOMIC_INT_T_LOCK_FREE ((UINT_MAX <= 0xFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_LONG_T_LOCK_FREE ((ULONG_MAX <= 0xFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_LLONG_T_LOCK_FREE ((ULLONG_MAX <= 0xFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_POINTER_T_LOCK_FREE ((UINTPTR_MAX <= 0xFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_CHAR16_T_LOCK_FREE ((UINT_LEAST16_MAX <= 0xFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_CHAR32_T_LOCK_FREE ((UINT_LEAST32_MAX <= 0xFFFFFFFFU) ? 2 : 0)
++# define __GCC_ATOMIC_WCHAR_T_LOCK_FREE ((WCHAR_MAX <= 0xFFFFFFFFU) ? 2 : 0)
++# endif
++#endif
++
++
++#define ATOMIC_BOOL_LOCK_FREE       __GCC_ATOMIC_BOOL_LOCK_FREE
++#define ATOMIC_CHAR_LOCK_FREE       __GCC_ATOMIC_CHAR_LOCK_FREE
++#define ATOMIC_SHORT_T_LOCK_FREE    __GCC_ATOMIC_SHORT_T_LOCK_FREE
++#define ATOMIC_INT_T_LOCK_FREE      __GCC_ATOMIC_INT_T_LOCK_FREE
++#define ATOMIC_LONG_T_LOCK_FREE     __GCC_ATOMIC_LONG_T_LOCK_FREE
++#define ATOMIC_LLONG_T_LOCK_FREE    __GCC_ATOMIC_LLONG_T_LOCK_FREE
++
++#define ATOMIC_POINTER_T_LOCK_FREE  __GCC_ATOMIC_POINTER_T_LOCK_FREE
++
++#define ATOMIC_CHAR16_T_LOCK_FREE   __GCC_ATOMIC_CHAR16_T_LOCK_FREE
++#define ATOMIC_CHAR32_T_LOCK_FREE   __GCC_ATOMIC_CHAR32_T_LOCK_FREE
++#define ATOMIC_WCHAR_T_LOCK_FREE    __GCC_ATOMIC_WCHAR_T_LOCK_FREE
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_1
++# define ATOMIC_UINT8_LOCK_FREE 2
++#else
++# define ATOMIC_UINT8_LOCK_FREE 0
++#endif
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_2
++# define ATOMIC_UINT16_LOCK_FREE 2
++#else
++# define ATOMIC_UINT16_LOCK_FREE 0
++#endif
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
++# define ATOMIC_UINT32_LOCK_FREE 2
++#else
++# define ATOMIC_UINT32_LOCK_FREE 0
++#endif
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_8
++# define ATOMIC_UINT64_LOCK_FREE 2
++#else
++# define ATOMIC_UINT64_LOCK_FREE 0
++#endif
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16
++# define ATOMIC_UINT128_LOCK_FREE 2
++#else
++# define ATOMIC_UINT128_LOCK_FREE 0
++#endif
++
++
++#define atomic_is_lock_free(O)                                  \
++(sizeof*(O) == 1 ? ATOMIC_UINT8_LOCK_FREE                       \
++ : (sizeof*(O) == 2 ? ATOMIC_UINT16_LOCK_FREE                   \
++    : (sizeof*(O) == 4 ? ATOMIC_UINT32_LOCK_FREE                \
++       : ((sizeof*(O) == 8) ? ATOMIC_UINT64_LOCK_FREE           \
++          : ((sizeof*(O) == 16) ? ATOMIC_UINT128_LOCK_FREE      \
++             : 0)))))
++
++
++#endif
+diff --git a/src/internal/atomic_fence.h b/src/internal/atomic_fence.h
+new file mode 100644
+index 0000000..162507a
+--- /dev/null
++++ b/src/internal/atomic_fence.h
+@@ -0,0 +1,29 @@
++#ifndef _STDATOMIC_ATOMIC_FENCE_H_
++#define _STDATOMIC_ATOMIC_FENCE_H_ 1
++
++#include <atomic_constants.h>
++
++
++void atomic_thread_fence(memory_order mo);
++
++void atomic_signal_fence(memory_order mo);
++
++#define kill_dependency(X)                      \
++({                                              \
++  register __typeof__(X) kill_dependency = (X); \
++  kill_dependency;                              \
++ })
++
++#ifndef __ATOMIC_FORCE_SYNC
++# define atomic_thread_fence(MO) __atomic_thread_fence(MO)
++# define atomic_signal_fence(MO) __atomic_signal_fence(MO)
++#else
++# define atomic_thread_fence(MO)                        \
++({                                                      \
++  if (MO != memory_order_relaxed) __sync_synchronize(); \
++  else __asm__ volatile("# relaxed fence");             \
++ })
++#define atomic_signal_fence(MO) __asm__ volatile("# signal fence")
++#endif
++
++#endif
+diff --git a/src/internal/atomic_flag.h b/src/internal/atomic_flag.h
+new file mode 100644
+index 0000000..0d3344b
+--- /dev/null
++++ b/src/internal/atomic_flag.h
+@@ -0,0 +1,47 @@
++#ifndef _STDATOMIC_ATOMIC_FLAG_H_
++#define _STDATOMIC_ATOMIC_FLAG_H_ 1
++
++#include <atomic_constants.h>
++
++#ifndef __GCC_ATOMIC_TEST_AND_SET_TRUEVAL
++# define __GCC_ATOMIC_TEST_AND_SET_TRUEVAL 1
++#endif
++
++typedef struct atomic_flag atomic_flag;
++struct atomic_flag {
++	_Bool f;
++};
++
++_Bool atomic_flag_test_and_set(volatile atomic_flag*);
++_Bool atomic_flag_test_and_set_explicit(volatile atomic_flag*, memory_order);
++void atomic_flag_clear(volatile atomic_flag*);
++void atomic_flag_clear_explicit(volatile atomic_flag*, memory_order);
++
++#define ATOMIC_FLAG_INIT { .f = 0, }
++
++#define atomic_flag_test_and_set(A) atomic_flag_test_and_set_explicit((A), memory_order_seq_cst)
++#define atomic_flag_clear(A) atomic_flag_clear_explicit((A), memory_order_seq_cst)
++
++#ifndef __ATOMIC_FORCE_SYNC
++# define atomic_flag_test_and_set_explicit(A, MO)  (__atomic_test_and_set(&((A)->f), MO) == __GCC_ATOMIC_TEST_AND_SET_TRUEVAL)
++# define atomic_flag_clear_explicit(A, MO)          __atomic_clear(&(A)->f, MO)
++#else
++# define atomic_flag_test_and_set_explicit(A, O)                        \
++({                                                                      \
++  register _Bool atomic_flag_test_and_set_explicit                      \
++    = (__sync_lock_test_and_set(&(A)->f, __GCC_ATOMIC_TEST_AND_SET_TRUEVAL) == __GCC_ATOMIC_TEST_AND_SET_TRUEVAL); \
++  /* gcc guarantees that this was an acquire operation. */              \
++  /* synchronize even stronger if we need to */                         \
++  if ((O) == memory_order_seq_cst) __sync_synchronize();                \
++  atomic_flag_test_and_set_explicit;                                    \
++ })
++# define atomic_flag_clear_explicit(A, O)                       \
++({                                                              \
++  /* gcc guarantees that this will be a release operation. */   \
++  /* synchronize even stronger if we need to */                 \
++  if ((O) == memory_order_seq_cst) __sync_synchronize();        \
++  __sync_lock_release(&(A)->f);                                 \
++    })
++#endif
++
++#endif
+diff --git a/src/internal/atomic_gcc_atomic.h b/src/internal/atomic_gcc_atomic.h
+new file mode 100644
+index 0000000..e030b85
+--- /dev/null
++++ b/src/internal/atomic_gcc_atomic.h
+@@ -0,0 +1,107 @@
++#ifndef _STDATOMIC_GCC_ATOMIC_H_
++#define _STDATOMIC_GCC_ATOMIC_H_ 1
++
++#include <atomic_stub.h>
++
++#define ATOMIC_VAR_INIT(...) __VA_ARGS__
++#define atomic_init(X, V) ((void)((*(X))=(V)))
++
++/* Map all non-explicit macros to the explicit version. */
++#define atomic_fetch_add(X, Y)                  atomic_fetch_add_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_sub(X, Y)                  atomic_fetch_sub_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_and(X, Y)                  atomic_fetch_and_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_or(X, Y)                   atomic_fetch_or_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_xor(X, Y)                  atomic_fetch_xor_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_load(X)                          atomic_load_explicit((X), memory_order_seq_cst)
++#define atomic_store(X, V)                      atomic_store_explicit((X), (V), memory_order_seq_cst)
++#define atomic_exchange(X, V)                   atomic_exchange_explicit((X), (V), memory_order_seq_cst)
++#define atomic_compare_exchange_weak(X, E, V)   atomic_compare_exchange_weak_explicit((X), (E), (V), memory_order_seq_cst, memory_order_seq_cst)
++#define atomic_compare_exchange_strong(X, E, V) atomic_compare_exchange_strong_explicit((X), (E), (V), memory_order_seq_cst, memory_order_seq_cst)
++
++/* Map allexplicit macros to the corresponding builtin.          */
++/* The arithmetic operations don't have to use a memory operand. */
++#define atomic_fetch_add_explicit(X, Y, MO) __atomic_fetch_add((X), (Y), (MO))
++#define atomic_fetch_sub_explicit(X, Y, MO) __atomic_fetch_sub((X), (Y), (MO))
++#define atomic_fetch_and_explicit(X, Y, MO) __atomic_fetch_and((X), (Y), (MO))
++#define atomic_fetch_or_explicit(X, Y, MO)  __atomic_fetch_or((X), (Y), (MO))
++#define atomic_fetch_xor_explicit(X, Y, MO) __atomic_fetch_xor((X), (Y), (MO))
++
++/* The interfaces for the universal functions need to operate on
++   memory operands, only. */
++
++#define atomic_load_explicit(X, MO)             \
++({                                              \
++  __atyp(*X) _r;                                \
++  __atomic_load((X), _r, (MO));                 \
++  __aret(_r[0]);                                \
++ })
++
++#define atomic_store_explicit(X, V, MO)         \
++  __atomic_store((X), &__atmp(*X, V), (MO))
++
++#define atomic_exchange_explicit(X, V, MO)              \
++({                                                      \
++  __atyp(*X) _r;                                        \
++  __atomic_exchange((X), &__atmp(*X, V), _r, (MO));     \
++  __aret(_r[0]);                                        \
++ })
++
++#define atomic_compare_exchange_weak_explicit(X, E, V, MOS, MOF)        \
++  __atomic_compare_exchange((X), (E), &__atmp(*(X), (V)), 1, (MOS), (MOF))
++
++#define atomic_compare_exchange_strong_explicit(X, E, V, MOS, MOF)       \
++  __atomic_compare_exchange((X), (E), &__atmp(*(X), (V)), 0, (MOS), (MOF))
++
++
++#define INSTANTIATE_STUB_LF(N, T)                                       \
++T __impl_fetch_add_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_fetch_add(X, V, M);                                   \
++}                                                                       \
++T __impl_fetch_sub_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_fetch_sub(X, V, M);                                   \
++}                                                                       \
++T __impl_fetch_and_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_fetch_and(X, V, M);                                   \
++}                                                                       \
++T __impl_fetch_xor_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_fetch_xor(X, V, M);                                   \
++}                                                                       \
++T __impl_fetch_nand_ ## N(_Atomic(T)* X, T const V, int M) {            \
++  return __atomic_fetch_nand(X, V, M);                                  \
++}                                                                       \
++T __impl_fetch_or_ ## N(_Atomic(T)* X, T const V, int M) {              \
++  return __atomic_fetch_or(X, V, M);                                    \
++}                                                                       \
++T __impl_add_fetch_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_add_fetch(X, V, M);                                   \
++}                                                                       \
++T __impl_sub_fetch_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_sub_fetch(X, V, M);                                   \
++}                                                                       \
++T __impl_and_fetch_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_and_fetch(X, V, M);                                   \
++}                                                                       \
++T __impl_xor_fetch_ ## N(_Atomic(T)* X, T const V, int M) {             \
++  return __atomic_xor_fetch(X, V, M);                                   \
++}                                                                       \
++T __impl_nand_fetch_ ## N(_Atomic(T)* X, T const V, int M) {            \
++  return __atomic_nand_fetch(X, V, M);                                  \
++}                                                                       \
++T __impl_or_fetch_ ## N(_Atomic(T)* X, T const V, int M) {              \
++  return __atomic_or_fetch(X, V, M);                                    \
++}                                                                       \
++T __impl_load_ ## N(_Atomic(T)* X, int M) {                             \
++  return __atomic_load_n(X, M);                                         \
++}                                                                       \
++void __impl_store_ ## N(_Atomic(T)* X, T const V, int M) {              \
++  __atomic_store_n(X, V, M);                                            \
++}                                                                       \
++T __impl_exchange_ ## N(_Atomic(T)* X, T const V, int M) {              \
++  return __atomic_exchange_n(X, V, M);                                  \
++}                                                                       \
++_Bool __impl_compare_exchange_ ## N(_Atomic(T)* X, T* E, T const V, int MS, int MF) { \
++  return __atomic_compare_exchange_n(X, E, V, 0, MS, MF);               \
++}
++
++
++#endif
+diff --git a/src/internal/atomic_gcc_sync.h b/src/internal/atomic_gcc_sync.h
+new file mode 100644
+index 0000000..2d42a57
+--- /dev/null
++++ b/src/internal/atomic_gcc_sync.h
+@@ -0,0 +1,250 @@
++#ifndef _STDATOMIC_GCC_SYNC_H_
++#define _STDATOMIC_GCC_SYNC_H_ 1
++
++#define ATOMIC_VAR_INIT(...) { [0] = __VA_ARGS__, }
++#define atomic_init(X, V) ((void)((*(X))[0]=(V)))
++
++/* Map all non-explicit macros to the explicit version. */
++#define atomic_fetch_add(X, Y)                  atomic_fetch_add_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_sub(X, Y)                  atomic_fetch_sub_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_and(X, Y)                  atomic_fetch_and_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_or(X, Y)                   atomic_fetch_or_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_fetch_xor(X, Y)                  atomic_fetch_xor_explicit((X), (Y), memory_order_seq_cst)
++#define atomic_load(X)                          atomic_load_explicit((X), memory_order_seq_cst)
++#define atomic_store(X, V)                      atomic_store_explicit((X), (V), memory_order_seq_cst)
++#define atomic_exchange(X, V)                   atomic_exchange_explicit((X), (V), memory_order_seq_cst)
++#define atomic_compare_exchange_weak(X, E, V)   atomic_compare_exchange_strong_explicit((X), (E), (V), memory_order_seq_cst, memory_order_seq_cst)
++#define atomic_compare_exchange_strong(X, E, V) atomic_compare_exchange_strong_explicit((X), (E), (V), memory_order_seq_cst, memory_order_seq_cst)
++
++/* The argument X is supposed to be pointer to a one element array of
++   the base type. In evaluation context ``*(X)'' decays to a pointer
++   to the base type. In __typeof__ context we have to use
++   ``&(*(X))[0]'' for that. */
++#define atomic_fetch_add_explicit(X, Y, MO) __sync_fetch_and_add(*(X), (Y))
++#define atomic_fetch_sub_explicit(X, Y, MO) __sync_fetch_and_sub(*(X), (Y))
++#define atomic_fetch_and_explicit(X, Y, MO) __sync_fetch_and_or(*(X), (Y))
++#define atomic_fetch_or_explicit(X, Y, MO) __sync_fetch_and_and(*(X), (Y))
++#define atomic_fetch_xor_explicit(X, Y, MO) __sync_fetch_and_xor(*(X), (Y))
++
++#define atomic_compare_exchange_weak(X, E, D, MOS, MOF) atomic_compare_exchange_strong((X), (E), (V), (MOS), (MOF))
++
++#define INSTANTIATE_STUB_LF(N, T)                                       \
++T __impl_fetch_add_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_fetch_and_add(&((*X)[0]), _V);                          \
++}                                                                       \
++T __impl_fetch_sub_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_fetch_and_sub(&((*X)[0]), _V);                          \
++}                                                                       \
++T __impl_fetch_and_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_fetch_and_and(&((*X)[0]), _V);                          \
++}                                                                       \
++T __impl_fetch_xor_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_fetch_and_xor(&((*X)[0]), _V, _mo);                     \
++}                                                                       \
++T __impl_fetch_or_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_fetch_and_or(&((*X)[0]), _V, _mo);                      \
++}                                                                       \
++T __impl_add_fetch_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_add_and_fetch(&((*X)[0]), _V);                          \
++}                                                                       \
++T __impl_sub_fetch_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_sub_and_fetch(&((*X)[0]), _V);                          \
++}                                                                       \
++T __impl_and_fetch_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_and_and_fetch(&((*X)[0]), _V);                          \
++}                                                                       \
++T __impl_xor_fetch_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_xor_and_fetch(&((*X)[0]), _V, _mo);                     \
++}                                                                       \
++T __impl_or_fetch_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  return __sync_or_and_fetch(&((*X)[0]), _V, _mo);                      \
++}                                                                       \
++T __impl_load_ ## N(__typeof__(T volatile[1])* X, int _mo) {            \
++  return __sync_val_compare_and_swap(&((*X)[0]), 0, 0);                 \
++}                                                                       \
++T __impl_exchange_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  T _r = _V, _e;                                                        \
++  do {                                                                  \
++    _e = _r;                                                            \
++    _r = __sync_val_compare_and_swap(&((*X)[0]), _e, _V);               \
++  } while (_r != _e);                                                   \
++  return _r;                                                            \
++}                                                                       \
++void __impl_store_ ## N(__typeof__(T volatile[1])* X, T const _V, int _mo) { \
++  (void)__impl_exchange_ ## N(X, _V, _mo);                              \
++}                                                                       \
++_Bool __impl_compare_exchange_ ## N(__typeof__(T volatile[1])* X, T* _E, T const _D, int _mos, int _mof) { \
++  T _v = *_E;                                                           \
++  T _n = __sync_val_compare_and_swap(&((*X)[0]), _v, _D);               \
++  if (_v != _n) {                                                       \
++    *_E = _n;                                                           \
++    return 0;                                                           \
++  }                                                                     \
++  return 1;                                                             \
++}                                                                       \
++ INSTANTIATE_STUB_NAND(N, T)
++
++
++#define atomic_compare_exchange_strong_explicit(X, E, D, MOS, MOF)      \
++({                                                                      \
++  _Bool ret;                                                            \
++  __typeof__((*X)[0])* _e = (E);                                        \
++  __typeof__((*X)[0]) const _d = (D);                                   \
++  switch (sizeof _d) {                                                  \
++  case 8: ret = __sync_val_compare_and_swap((uint64_t*)(X), *_e, (D)); break; \
++  case 4: ret = __sync_val_compare_and_swap((uint32_t*)(X), *_e, (D)); break; \
++  case 2: ret = __sync_val_compare_and_swap((uint16_t*)(X), *_e, (D)); break; \
++  case 1: ret = __sync_val_compare_and_swap((uint8_t*)(X), *_e, (D)); break; \
++  default: ret = __impl_compare_exchange(sizeof (*X), (void*)(X), _e, &_d, MOS, MOS); \
++  }                                                                     \
++  __aret(ret);                                                          \
++ })
++
++#define __impl_union(T, X) union { __typeof__(*(X)) x; T t; }
++#define __impl_union2T(T, X) (((__impl_union(T, X)){ .x = (*(X)), }).t)
++#define __impl_union2X(T, X, V) (((__impl_union(T, X)){ .t = (V), }).x)
++
++#define __impl_load_union(T, X)                                       \
++__impl_union2X(T, X, __sync_val_compare_and_swap((T*)X, 0, 0))
++
++#define __impl_exchange_union(T, X, V)                  \
++({                                                      \
++  __impl_union(T, X) _V = { .t = (V), };                \
++  T _r = _V.t, _e;                                      \
++  do {                                                  \
++    _e = _r;                                            \
++    _r = __sync_val_compare_and_swap((T*)X, _e, _V.t);  \
++  } while (_r != _e);                                   \
++  __impl_union2X(T, X, _r);                             \
++ })
++
++#define __impl_store_union(T, X, V)                     \
++({                                                      \
++  __impl_union(T, X) _V = { .t = (V), };                \
++  T _r = _V.t, _e;                                      \
++  do {                                                  \
++    _e = _r;                                            \
++    _r = __sync_val_compare_and_swap((T*)X, _e, _V.t);  \
++  } while (_r != _e);                                   \
++ })
++
++#define __impl_compare_exchange_union(T, X, E, V)                       \
++({                                                                      \
++  __typeof__(*E)* _e = (E);                                             \
++  __impl_union(T, X) _V = { .x = (V), };                                \
++  __impl_union(T, X) _E = { .x = *_e, };                                \
++  __impl_union(T, X) _R = { .t = __sync_val_compare_and_swap((T*)X, _E.t, _V.t), }; \
++  _Bool _r = (_E.t == _R.t);                                            \
++  if (!_r) _E.x = _R.x;                                                 \
++  _r;                                                                   \
++ })
++
++#define atomic_load_explicit(X, MO)                     \
++__builtin_choose_expr                                   \
++(                                                       \
++ __UINT128__ && sizeof(*X)==16,                         \
++ __impl_load_union(__impl_uint128_t, &((*X)[0])),       \
++__builtin_choose_expr                                   \
++(                                                       \
++ sizeof(*X)==8,                                         \
++ __impl_load_union(uint64_t, &((*X)[0])),               \
++__builtin_choose_expr                                   \
++(                                                       \
++ sizeof(*X)==4,                                         \
++ __impl_load_union(uint32_t, &((*X)[0])),               \
++ __builtin_choose_expr                                  \
++(                                                       \
++ sizeof(*X)==2,                                         \
++ __impl_load_union(uint16_t, &((*X)[0])),               \
++ __builtin_choose_expr                                  \
++(                                                       \
++ sizeof(*X)==1,                                         \
++ __impl_load_union(uint8_t, &((*X)[0])),                \
++ ({                                                     \
++ __typeof__((*X)[0]) _r;                                \
++ __impl_load(sizeof _r, (void*)(&((*X)[0])), &_r, MO);  \
++ _r;                                                    \
++ }))))))
++
++#define atomic_store_explicit(X, V, MO)                 \
++__builtin_choose_expr                                   \
++(                                                       \
++ __UINT128__ && sizeof(*X)==16,                         \
++ __impl_store_union(__impl_uint128_t, &((*X)[0]), (V)), \
++__builtin_choose_expr                                   \
++(                                                       \
++ sizeof(*X)==8,                                         \
++ __impl_store_union(uint64_t, &((*X)[0]), (V)),         \
++__builtin_choose_expr                                   \
++(                                                       \
++ sizeof(*X)==4,                                         \
++ __impl_store_union(uint32_t, &((*X)[0]), (V)),         \
++ __builtin_choose_expr                                  \
++(                                                       \
++ sizeof(*X)==2,                                         \
++ __impl_store_union(uint16_t, &((*X)[0]), (V)),         \
++ __builtin_choose_expr                                  \
++(                                                       \
++ sizeof(*X)==1,                                         \
++ __impl_store_union(uint8_t, &((*X)[0]), (V)),          \
++ ({                                                     \
++ __typeof__((*X)[0]) const _v = (V);                    \
++ __impl_store(sizeof _v, &((*X)[0]), &_v, MO);          \
++ }))))))
++
++#define atomic_exchange_explicit(X, V, MO)                      \
++__builtin_choose_expr                                           \
++(                                                               \
++ __UINT128__ && sizeof(*X)==16,                                 \
++ __impl_exchange_union(__impl_uint128_t, &((*(X))[0]), (V)),    \
++__builtin_choose_expr                                           \
++(                                                               \
++ sizeof(*X)==8,                                                 \
++ __impl_exchange_union(uint64_t, &((*(X))[0]), (V)),            \
++__builtin_choose_expr                                           \
++(                                                               \
++ sizeof(*X)==4,                                                 \
++ __impl_exchange_union(uint32_t, &((*(X))[0]), (V)),            \
++ __builtin_choose_expr                                          \
++(                                                               \
++ sizeof(*X)==2,                                                 \
++ __impl_exchange_union(uint16_t, &((*(X))[0]), (V)),            \
++ __builtin_choose_expr                                          \
++(                                                               \
++ sizeof(*X)==1,                                                 \
++ __impl_exchange_union(uint8_t, &((*(X))[0]), (V)),             \
++ ({                                                             \
++ __typeof__((*X)[0]) const _v = (V);                            \
++ __typeof__((*X)[0]) _r = (V);                                  \
++ __impl_exchange(sizeof _r, (&((*X)[0])), &_r, &_v, MO);        \
++ _r;                                                            \
++ }))))))
++
++#define atomic_compare_exchange_explicit(X, E, V, MOS, MOF)             \
++__builtin_choose_expr                                                   \
++(                                                                       \
++ __UINT128__ && sizeof(*X)==16,                                         \
++ __impl_compare_exchange_union(__impl_uint128_t, &((*(X))[0]), (E), (V)), \
++__builtin_choose_expr                                                   \
++(                                                                       \
++ sizeof(*X)==8,                                                         \
++ __impl_compare_exchange_union(uint64_t, &((*(X))[0]), (E), (V)),       \
++__builtin_choose_expr                                                   \
++(                                                                       \
++ sizeof(*X)==4,                                                         \
++ __impl_compare_exchange_union(uint32_t, &((*(X))[0]), (E), (V)),       \
++ __builtin_choose_expr                                                  \
++(                                                                       \
++ sizeof(*X)==2,                                                         \
++ __impl_compare_exchange_union(uint16_t, &((*(X))[0]), (E), (V)),       \
++ __builtin_choose_expr                                                  \
++(                                                                       \
++ sizeof(*X)==1,                                                         \
++ __impl_compare_exchange_union(uint8_t, &((*(X))[0]), (E), (V)),        \
++ ({                                                                     \
++ __typeof__((*X)[0])* _e = (E);                                         \
++ __typeof__((*X)[0]) const _v = (V);                                    \
++ __impl_compare_exchange(sizeof _r, (&((*X)[0])), _e, &_v, MOS, MOF);   \
++ }))))))
++
++#endif
+diff --git a/src/internal/atomic_generic.h b/src/internal/atomic_generic.h
+new file mode 100644
+index 0000000..6ec6bb8
+--- /dev/null
++++ b/src/internal/atomic_generic.h
+@@ -0,0 +1,10 @@
++#ifndef _STDATOMIC_ATOMIC_GENERIC_H_
++#define _STDATOMIC_ATOMIC_GENERIC_H_ 1
++
++void __impl_load (size_t size, void volatile* ptr, void volatile* ret, int mo);
++void __impl_store (size_t size, void volatile* ptr, void const volatile* val, int mo);
++void __impl_exchange (size_t size, void volatile*__restrict__ ptr, void const volatile* val, void volatile* ret, int mo);
++_Bool __impl_compare_exchange (size_t size, void volatile* ptr, void volatile* expected, void const volatile* desired, int mos, int mof);
++void __impl_print_stat(void);
++
++#endif
+diff --git a/src/internal/atomic_stub.h b/src/internal/atomic_stub.h
+new file mode 100644
+index 0000000..c5e3329
+--- /dev/null
++++ b/src/internal/atomic_stub.h
+@@ -0,0 +1,208 @@
++#ifndef _STDATOMIC_STUB_H_
++#define _STDATOMIC_STUB_H_ 1
++
++#include <atomic_generic.h>
++
++#define INSTANTIATE_STUB_LCA(N, T)                                      \
++T __impl_fetch_add_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = V;                                                              \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E + V;                                                          \
++  }                                                                     \
++  return E;                                                             \
++}                                                                       \
++T __impl_fetch_sub_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = -V;                                                             \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E - V;                                                          \
++  }                                                                     \
++  return E;                                                             \
++}                                                                       \
++T __impl_fetch_and_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = 0;                                                              \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E & V;                                                          \
++  }                                                                     \
++  return E;                                                             \
++}                                                                       \
++T __impl_fetch_xor_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = V;                                                              \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E ^ V;                                                          \
++  }                                                                     \
++  return E;                                                             \
++}                                                                       \
++T __impl_fetch_or_ ## N(void volatile* X, T const V, int MO) {          \
++  T E = 0;                                                              \
++  T R = V;                                                              \
++  int mof = MO == memory_order_relaxed ? memory_order_relaxed : memory_order_consume; \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E | V;                                                          \
++  }                                                                     \
++  return E;                                                             \
++}                                                                       \
++T __impl_add_fetch_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = V;                                                              \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E + V;                                                          \
++  }                                                                     \
++  return R;                                                             \
++}                                                                       \
++T __impl_sub_fetch_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = -V;                                                             \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E - V;                                                          \
++  }                                                                     \
++  return R;                                                             \
++}                                                                       \
++T __impl_and_fetch_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = 0;                                                              \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E & V;                                                          \
++  }                                                                     \
++  return R;                                                             \
++}                                                                       \
++T __impl_xor_fetch_ ## N(void volatile* X, T const V, int MO) {         \
++  T E = 0;                                                              \
++  T R = V;                                                              \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E ^ V;                                                          \
++  }                                                                     \
++  return R;                                                             \
++}                                                                       \
++T __impl_or_fetch_ ## N(void volatile* X, T const V, int MO) {          \
++  T E = 0;                                                              \
++  T R = V;                                                              \
++  int mof = MO == memory_order_relaxed ? memory_order_relaxed : memory_order_consume; \
++  while (!__impl_compare_exchange(N, X, &E, &R, MO, mof)){              \
++    R = E | V;                                                          \
++  }                                                                     \
++  return R;                                                             \
++}
++
++#define INSTANTIATE_STUB_NAND(N, T)                                     \
++T __impl_fetch_nand_ ## N(void volatile* X, T const V, int MO) {        \
++  T E = 0;                                                              \
++  T R = ~0;                                                             \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!atomic_compare_exchange_strong_explicit((_Atomic(T)*)X, &E, R, MO, mof)){ \
++    R = ~(E & V);                                                       \
++  }                                                                     \
++  return E;                                                             \
++}                                                                       \
++T __impl_nand_fetch_ ## N(void volatile* X, T const V, int MO) {        \
++  T E = 0;                                                              \
++  T R = ~E;                                                             \
++  int mof = (MO == memory_order_relaxed                                 \
++             ? memory_order_relaxed                                     \
++             : memory_order_consume);                                   \
++  while (!atomic_compare_exchange_strong_explicit((_Atomic(T)*)X, &E, R, MO, mof)){ \
++    R = ~(E & V);                                                       \
++  }                                                                     \
++  return R;                                                             \
++}
++
++
++#define INSTANTIATE_STUB_LCM(N, T)                                      \
++T __impl_load_ ## N(void volatile* X, int MO) {                         \
++  T ret;                                                                \
++  __impl_load(N, X, &ret, MO);                                          \
++  return ret;                                                           \
++}                                                                       \
++void __impl_store_ ## N(void volatile* X, T const V, int MO) {          \
++  __impl_store(N, X, &V, MO);                                           \
++}                                                                       \
++T __impl_exchange_ ## N(void volatile* X, T const V, int MO) {          \
++  T ret;                                                                \
++  __impl_exchange(N, X, &V, &ret, MO);                                  \
++  return ret;                                                           \
++}                                                                       \
++_Bool __impl_compare_exchange_ ## N(void volatile* X, T* E, T const V, int MOS, int MOf) { \
++  return __impl_compare_exchange(N, X, E, &V, MOS, MOf);                \
++}                                                                       \
++ INSTANTIATE_STUB_NAND(N, T)
++
++#define INSTANTIATE_STUB_LC(N, T) INSTANTIATE_STUB_LCA(N, T) INSTANTIATE_STUB_LCM(N, T)
++
++
++#define INSTANTIATE_SYNCA(N, T)                                         \
++T __impl_fetch_and_add_ ## N(void volatile* X, T const V) {             \
++  return __impl_fetch_add_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_fetch_and_sub_ ## N(void volatile* X, T const V) {             \
++  return __impl_fetch_sub_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_fetch_and_and_ ## N(void volatile* X, T const V) {             \
++  return __impl_fetch_and_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_fetch_and_or_ ## N(void volatile* X, T const V) {              \
++  return __impl_fetch_or_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_fetch_and_xor_ ## N(void volatile* X, T const V) {             \
++  return __impl_fetch_xor_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_add_and_fetch_ ## N(void volatile* X, T const V) {             \
++  return __impl_add_fetch_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_sub_and_fetch_ ## N(void volatile* X, T const V) {             \
++  return __impl_sub_fetch_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_and_and_fetch_ ## N(void volatile* X, T const V) {             \
++  return __impl_and_fetch_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_or_and_fetch_ ## N(void volatile* X, T const V) {              \
++  return __impl_or_fetch_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}                                                                       \
++T __impl_xor_and_fetch_ ## N(void volatile* X, T const V) {             \
++  return __impl_xor_fetch_ ## N((_Atomic(T)*)X, V, memory_order_seq_cst); \
++}
++
++#define INSTANTIATE_SYNCM(N, T)                                         \
++_Bool __impl_bool_compare_and_swap_ ## N(void volatile* X, T E, T const V) { \
++  T R = E;                                                              \
++  return __impl_compare_exchange_ ## N((_Atomic(T)*)X, &R, V,           \
++                                                      memory_order_seq_cst, memory_order_seq_cst); \
++}                                                                       \
++T __impl_val_compare_and_swap_ ## N(void volatile* X, T E, T const V) { \
++   T R = E;                                                             \
++  __impl_compare_exchange_ ## N((_Atomic(T)*)X, &R, V,                  \
++                                               memory_order_seq_cst, memory_order_seq_cst); \
++  return R;                                                             \
++}
++
++#define INSTANTIATE_SYNC(N, T) INSTANTIATE_SYNCA(N, T) INSTANTIATE_SYNCM(N, T)
++
++#endif
+diff --git a/src/internal/atomic_types.h b/src/internal/atomic_types.h
+new file mode 100644
+index 0000000..e873f35
+--- /dev/null
++++ b/src/internal/atomic_types.h
+@@ -0,0 +1,46 @@
++#ifndef _STDATOMIC_TYPES_H_
++#define _STDATOMIC_TYPES_ 1
++
++#include <wchar.h>
++#include <stddef.h>
++#include <stdint.h>
++
++typedef _Atomic(_Bool)              atomic_bool;
++typedef _Atomic(char)               atomic_char;
++typedef _Atomic(int)                atomic_int;
++typedef _Atomic(int_fast16_t)       atomic_int_fast16_t;
++typedef _Atomic(int_fast32_t)       atomic_int_fast32_t;
++typedef _Atomic(int_fast64_t)       atomic_int_fast64_t;
++typedef _Atomic(int_fast8_t)        atomic_int_fast8_t;
++typedef _Atomic(int_least16_t)      atomic_int_least16_t;
++typedef _Atomic(int_least32_t)      atomic_int_least32_t;
++typedef _Atomic(int_least64_t)      atomic_int_least64_t;
++typedef _Atomic(int_least8_t)       atomic_int_least8_t;
++typedef _Atomic(intmax_t)           atomic_intmax_t;
++typedef _Atomic(intptr_t)           atomic_intptr_t;
++typedef _Atomic(long long)          atomic_llong;
++typedef _Atomic(long)               atomic_long;
++typedef _Atomic(ptrdiff_t)          atomic_ptrdiff_t;
++typedef _Atomic(short)              atomic_short;
++typedef _Atomic(signed char)        atomic_schar;
++typedef _Atomic(size_t)             atomic_size_t;
++typedef _Atomic(uint_fast16_t)      atomic_uint_fast16_t;
++typedef _Atomic(uint_fast32_t)      atomic_uint_fast32_t;
++typedef _Atomic(uint_fast64_t)      atomic_uint_fast64_t;
++typedef _Atomic(uint_fast8_t)       atomic_uint_fast8_t;
++typedef _Atomic(uint_least16_t)     atomic_char16_t;
++typedef _Atomic(uint_least16_t)     atomic_uint_least16_t;
++typedef _Atomic(uint_least32_t)     atomic_char32_t;
++typedef _Atomic(uint_least32_t)     atomic_uint_least32_t;
++typedef _Atomic(uint_least64_t)     atomic_uint_least64_t;
++typedef _Atomic(uint_least8_t)      atomic_uint_least8_t;
++typedef _Atomic(uintmax_t)          atomic_uintmax_t;
++typedef _Atomic(uintptr_t)          atomic_uintptr_t;
++typedef _Atomic(unsigned char)      atomic_uchar;
++typedef _Atomic(unsigned int)       atomic_uint;
++typedef _Atomic(unsigned long long) atomic_ullong;
++typedef _Atomic(unsigned long)      atomic_ulong;
++typedef _Atomic(unsigned short)     atomic_ushort;
++typedef _Atomic(wchar_t)            atomic_wchar_t;
++
++#endif
+diff --git a/src/internal/stdatomic-impl.h b/src/internal/stdatomic-impl.h
+new file mode 100644
+index 0000000..7aaa0d5
+--- /dev/null
++++ b/src/internal/stdatomic-impl.h
+@@ -0,0 +1,75 @@
++#ifndef _STDATOMIC_H_
++#define _STDATOMIC_H_ 1
++
++/* Copyright 2015, Jens Gustedt, France. */
++
++/**
++ ** @file
++ **
++ ** @brief An realization of the stdatomic.h interface by means of gcc
++ ** or clang compiler extensions.
++ **
++ ** This has three different realizations, using intrinsics for modern
++ ** clang (__c11_atomic ...), modern gcc (__atomic ...) or for the old
++ ** gcc __sync interface. The later should be available on a lot of
++ ** platforms, many other compilers, including clang implement these
++ ** interfaces.
++ **
++ ** For the first two, user code should be able to use all C11 atomic
++ ** features without problems.
++ **
++ ** For the __sync interface, we can't assume that there is support
++ ** for operators on atomics, so such code should simply not use
++ ** them. But the "functional" approach to atomics should work even
++ ** then. That is code that uses the _Atomic() variant to declare
++ ** atomic objects and only uses the atomic_... macros as of the C11
++ ** standard to act upon these objects should work.
++ **
++ ** The sync code also depends a lot of other gcc extensions to C:
++ **
++ ** - compound expressions
++ ** - __typeof__
++ ** - __alignof__
++ ** - __attribute__((aligned(something)))
++ **/
++
++
++#include <atomic_constants.h>
++#include <atomic_flag.h>
++#include <atomic_fence.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include <stddef.h>
++
++/* In some places we need a type that is almost the same as base type
++   T, but
++
++   - returns a pointer to T in evaluation context
++   - can't be assigned to
++
++   T can be a type or an expression.
++*/
++#define __atyp(T) __typeof__(__typeof__(T)[1])
++
++/* To evaluate expressions we sometimes need temporaries of that type
++   with a certain value. */
++#define __atmp(T, V) (__atyp(T)){ [0] = (V), }
++
++/* When evaluating lvalues in gcc's compound expressions to return a
++   value, we want to take care that these lvalues can't be
++   accidentally be subject to the & operator. Force it to be an
++   rvalue. */
++#define __aret(V) (1 ? (V) : (V))
++
++
++#ifdef __ATOMIC_FORCE_SYNC
++#include <atomic_gcc_sync.h>
++#elif defined(__clang__)
++#include <atomic_clang_c11.h>
++#else
++#include <atomic_gcc_atomic.h>
++#endif
++
++#include <atomic_types.h>
++
++#endif
+diff --git a/src/stdatomic/atomic_fence.c b/src/stdatomic/atomic_fence.c
+new file mode 100644
+index 0000000..996286f
+--- /dev/null
++++ b/src/stdatomic/atomic_fence.c
+@@ -0,0 +1,9 @@
++#include "atomic_fence.h"
++
++void (atomic_thread_fence)(memory_order mo) {
++	atomic_thread_fence(mo);
++}
++
++void (atomic_signal_fence)(memory_order mo) {
++	atomic_signal_fence(mo);
++}
+diff --git a/src/stdatomic/atomic_flag.c b/src/stdatomic/atomic_flag.c
+new file mode 100644
+index 0000000..a27fbe3
+--- /dev/null
++++ b/src/stdatomic/atomic_flag.c
+@@ -0,0 +1,17 @@
++#include "atomic_flag.h"
++
++_Bool (atomic_flag_test_and_set)(volatile atomic_flag* f) {
++	return atomic_flag_test_and_set(f);
++}
++
++_Bool (atomic_flag_test_and_set_explicit)(volatile atomic_flag* f, memory_order mo) {
++	return atomic_flag_test_and_set_explicit(f, mo);
++}
++
++void (atomic_flag_clear)(volatile atomic_flag* f) {
++	atomic_flag_clear(f);
++}
++
++void (atomic_flag_clear_explicit)(volatile atomic_flag* f, memory_order mo) {
++	atomic_flag_clear_explicit(f, mo);
++}
+diff --git a/src/stdatomic/atomic_generic.c b/src/stdatomic/atomic_generic.c
+new file mode 100644
+index 0000000..d08e71f
+--- /dev/null
++++ b/src/stdatomic/atomic_generic.c
+@@ -0,0 +1,224 @@
++#include <limits.h>
++#include <string.h>
++#include "stdatomic-impl.h"
++#include "atomic_generic.h"
++#include "libc.h"
++
++#ifdef HASH_STAT
++# include <math.h>
++# include <stdio.h>
++#endif
++
++/* This is compatible with musl's internal locks. */
++/* The lock itself must be lock-free, so in general the can only be an
++   atomic_flag if we know nothing else about the platform. */
++
++typedef int volatile __impl_lock[2];
++
++
++
++/* the size of this table has a trade off between the probability of
++   collisions (the bigger the table, the better) and the waste of
++   space (the smaller, the better). */
++
++#ifndef HBIT
++# define HBIT 8
++#endif
++/* len is a power of two such that we just can mask out higher bits */
++enum { LEN = 1<<HBIT, };
++enum { ptrbit = sizeof(uintptr_t)*CHAR_BIT, };
++
++static __impl_lock table[LEN];
++
++#ifdef HASH_STAT
++static _Atomic(size_t) draw[LEN];
++#endif
++
++/* Chose a medium sized prime number as a factor. The multiplication
++   by it is a bijection modulo any LEN. */
++#define MAGIC 14530039U
++
++__attribute__((__unused__))
++static
++unsigned __impl_hash(void volatile const* X) {
++	uintptr_t const len = LEN;
++	uintptr_t x = (uintptr_t)X;
++	x *= MAGIC;
++	/* Be sure to use all bits in the result. */
++	if (ptrbit > 8*HBIT)  x ^= (x / (len*len*len*len*len*len*len*len));
++	if (ptrbit > 4*HBIT)  x ^= (x / (len*len*len*len));
++	if (ptrbit > 2*HBIT)  x ^= (x / (len*len));
++	if (ptrbit > 1*HBIT)  x ^= (x / len);
++	x %= len;
++#ifdef HASH_STAT
++	atomic_fetch_add_explicit(&draw[x], 1, memory_order_relaxed);
++#endif
++	return x;
++}
++
++__attribute__((__unused__))
++static
++unsigned __impl_jenkins_one_at_a_time_hash(void volatile const* k) {
++	union {
++		unsigned char b[sizeof k];
++		uintptr_t v;
++		void volatile const* k;
++	} key = { .k = k, };
++	uintptr_t i, x = 0;
++	for(i = 0; i < sizeof(uintptr_t); ++i) {
++		x += key.b[i];
++		x += (x << 10);
++		x ^= (x >> 6);
++	}
++	x += (x << 3);
++	x ^= (x >> 11);
++	x += (x << 15);
++	x %= LEN;
++#ifdef HASH_STAT
++	atomic_fetch_add_explicit(&draw[x], 1, memory_order_relaxed);
++#endif
++	return x;
++}
++
++__attribute__((__unused__))
++static
++uintptr_t __impl_mix(void volatile const* x) {
++	uintptr_t h = (uintptr_t)x;
++	h ^= h >> 16;
++	h *= 0x85ebca6b;
++	h ^= h >> 13;
++	h *= 0xc2b2ae35;
++	h ^= h >> 16;
++	h %= LEN;
++#ifdef HASH_STAT
++	atomic_fetch_add_explicit(&draw[h], 1, memory_order_relaxed);
++#endif
++	return h;
++}
++
++__attribute__((__unused__))
++static
++uintptr_t __impl_8(void volatile const* x) {
++	uintptr_t h = (uintptr_t)x;
++	h ^= (h >> 8);
++	h %= LEN;
++#ifdef HASH_STAT
++	atomic_fetch_add_explicit(&draw[h], 1, memory_order_relaxed);
++#endif
++	return h;
++}
++
++#ifndef __ATOMIC_HASH
++# define __ATOMIC_HASH __impl_hash
++#endif
++#define hash __ATOMIC_HASH
++
++
++void __impl_load (size_t size, void volatile* ptr, void volatile* ret, int mo) {
++	unsigned pos = hash(ptr);
++	LOCK(table[pos]);
++	if (mo == memory_order_seq_cst)
++		atomic_thread_fence(memory_order_seq_cst);
++	memcpy((void*)ret, (void*)ptr, size);
++	UNLOCK(table[pos]);
++}
++
++void __impl_store (size_t size, void volatile* ptr, void const volatile* val, int mo) {
++	unsigned pos = hash(ptr);
++	LOCK(table[pos]);
++	memcpy((void*)ptr, (void*)val, size);
++	if (mo == memory_order_seq_cst)
++		atomic_thread_fence(memory_order_seq_cst);
++	UNLOCK(table[pos]);
++}
++
++static
++void atomic_exchange_restrict (size_t size, void volatile*__restrict__ ptr, void const volatile*__restrict__ val, void volatile*__restrict__ ret, int mo) {
++	unsigned pos = hash(ptr);
++	LOCK(table[pos]);
++	memcpy((void*)ret, (void*)ptr, size);
++	if (mo == memory_order_seq_cst)
++		atomic_thread_fence(memory_order_seq_cst);
++	memcpy((void*)ptr, (void*)val, size);
++	UNLOCK(table[pos]);
++}
++
++void __impl_exchange (size_t size, void volatile*__restrict__ ptr, void const volatile* val, void volatile* ret, int mo) {
++	if (val == ret) {
++		unsigned char buffer[size];
++		atomic_exchange_restrict(size, ptr, val, buffer, mo);
++		memcpy((void*)ret, buffer, size);
++	} else {
++		atomic_exchange_restrict(size, ptr, val, ret, mo);
++	}
++}
++
++_Bool __impl_compare_exchange (size_t size, void volatile* ptr, void volatile* expected, void const volatile* desired, int mos, int mof) {
++	unsigned pos = hash(ptr);
++	LOCK(table[pos]);
++	_Bool ret = !memcmp((void*)ptr, (void*)expected, size);
++	if (ret) {
++		memcpy((void*)ptr, (void*)desired, size);
++		if (mos == memory_order_seq_cst)
++			atomic_thread_fence(memory_order_seq_cst);
++	} else {
++		if (mof == memory_order_seq_cst)
++			atomic_thread_fence(memory_order_seq_cst);
++		memcpy((void*)expected, (void*)ptr, size);
++	}
++	UNLOCK(table[pos]);
++	/* fprintf(stderr, "cas for %p (%zu) at pos %u, %s, exp %p, des %p\n", */
++	/*         ptr, size, pos, ret ? "suceeded" : "failed", */
++	/*         expected, desired); */
++	return ret;
++}
++
++/* To collect hash statistics about atomics, compile with
++   ``HASH_STAT'' */
++void __impl_print_stat(void) {
++#ifdef HASH_STAT
++	size_t x1 = 0;
++	size_t x2 = 0;
++	size_t min = -1;
++	size_t max = 0;
++	size_t i;
++	for (i = 0; i < LEN; i++) {
++		size_t val = atomic_load(&draw[i]);
++		fprintf(stderr, "\t%zu", val);
++		if ((i % 8) == 7) fputc('\n', stderr);
++		x1 += val;
++		x2 += val*val;
++		if (val < min) min = val;
++		if (val > max) max = val;
++	}
++	fputc('\n', stderr);
++	double avg1 = (x1+0.0)/LEN;
++	double avg2 = (x2+0.0)/LEN;
++	double var = avg2 - avg1*avg1;
++	fprintf(stderr, "hash utilisation, %d positions, %zu draws: %zu < %e (+%e) < %zu\n",
++	        LEN, x1, min, avg1, sqrt(var), max);
++#endif
++}
++
++/* For the four functions defined here, we need two entries in the
++   symbol table. One will be the final link name of the replacement
++   stub, something like __atomic_load, e.g. The other one is the
++   __impl prefixed name. It may eventually be used by the fixed-sized
++   stub functions, since these can't use the name that corresponds to
++   the builtin.
++
++   The replacement to the final name is not done within compiling,
++   since the name clashes can only create conflicts for a C
++   compiler. Instead, we use an external tool (objcopy) that does the
++   renaming.
++
++   We want these to be strong aliases, so they can't accidentally be
++   replaced. Therefore we can't use musl's weak_alias macro but create
++   one of our own. */
++
++#define alias(X, Y) __attribute__((__alias__(#X))) __typeof__(X) Y
++
++alias(__impl_load, __impl_load_replace);
++alias(__impl_store, __impl_store_replace);
++alias(__impl_exchange, __impl_exchange_replace);
++alias(__impl_compare_exchange, __impl_compare_exchange_replace);
+diff --git a/src/stdatomic/atomic_generic_1.c b/src/stdatomic/atomic_generic_1.c
+new file mode 100644
+index 0000000..722657b
+--- /dev/null
++++ b/src/stdatomic/atomic_generic_1.c
+@@ -0,0 +1,10 @@
++
++#include "stdatomic-impl.h"
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_1
++INSTANTIATE_STUB_LF(1, uint8_t)
++#else
++INSTANTIATE_STUB_LC(1, uint8_t)
++#endif
++
++INSTANTIATE_SYNC(1, uint8_t)
+diff --git a/src/stdatomic/atomic_generic_16.c b/src/stdatomic/atomic_generic_16.c
+new file mode 100644
+index 0000000..ac5105f
+--- /dev/null
++++ b/src/stdatomic/atomic_generic_16.c
+@@ -0,0 +1,15 @@
++
++#include "stdatomic-impl.h"
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16
++INSTANTIATE_STUB_LF(16, __impl_uint128_t)
++INSTANTIATE_SYNC(16, __impl_uint128_t)
++#else
++INSTANTIATE_STUB_LCM(16, __impl_uint128_t)
++INSTANTIATE_SYNCM(16, __impl_uint128_t)
++# if __UINT128__
++INSTANTIATE_STUB_LCA(16, __impl_uint128_t)
++INSTANTIATE_SYNCA(16, __impl_uint128_t)
++# endif
++#endif
++
+diff --git a/src/stdatomic/atomic_generic_2.c b/src/stdatomic/atomic_generic_2.c
+new file mode 100644
+index 0000000..a8244f2
+--- /dev/null
++++ b/src/stdatomic/atomic_generic_2.c
+@@ -0,0 +1,10 @@
++
++#include "stdatomic-impl.h"
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_2
++INSTANTIATE_STUB_LF(2, uint16_t)
++#else
++INSTANTIATE_STUB_LC(2, uint16_t)
++#endif
++
++INSTANTIATE_SYNC(2, uint16_t)
+diff --git a/src/stdatomic/atomic_generic_4.c b/src/stdatomic/atomic_generic_4.c
+new file mode 100644
+index 0000000..7b1693f
+--- /dev/null
++++ b/src/stdatomic/atomic_generic_4.c
+@@ -0,0 +1,10 @@
++
++#include "stdatomic-impl.h"
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
++INSTANTIATE_STUB_LF(4, uint32_t)
++#else
++INSTANTIATE_STUB_LC(4, uint32_t)
++#endif
++
++INSTANTIATE_SYNC(4, uint32_t)
+diff --git a/src/stdatomic/atomic_generic_8.c b/src/stdatomic/atomic_generic_8.c
+new file mode 100644
+index 0000000..d652497
+--- /dev/null
++++ b/src/stdatomic/atomic_generic_8.c
+@@ -0,0 +1,10 @@
++
++#include "stdatomic-impl.h"
++
++#ifdef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_8
++INSTANTIATE_STUB_LF(8, uint64_t)
++#else
++INSTANTIATE_STUB_LC(8, uint64_t)
++#endif
++
++INSTANTIATE_SYNC(8, uint64_t)
+diff --git a/src/stdatomic/redefine_syms.sh b/src/stdatomic/redefine_syms.sh
+new file mode 100755
+index 0000000..31740c5
+--- /dev/null
++++ b/src/stdatomic/redefine_syms.sh
+@@ -0,0 +1,10 @@
++#!/bin/sh
++
++objects=$(ls *.o)
++
++for obj in ${objects} ; do
++    objcopy --redefine-syms=redefine_syms.txt ${obj} tmp.o
++    mv tmp.o ${obj}
++    objcopy --redefine-syms=redefine_syms.txt ${obj%.o}.lo tmp.o
++    mv tmp.o ${obj%.o}.lo
++done
+diff --git a/src/stdatomic/redefine_syms.txt b/src/stdatomic/redefine_syms.txt
+new file mode 100644
+index 0000000..5197a49
+--- /dev/null
++++ b/src/stdatomic/redefine_syms.txt
+@@ -0,0 +1,144 @@
++__impl_load_1 __atomic_load_1
++__impl_store_1 __atomic_store_1
++__impl_exchange_1 __atomic_exchange_1
++__impl_compare_exchange_1 __atomic_compare_exchange_1
++__impl_fetch_add_1 __atomic_fetch_add_1
++__impl_fetch_sub_1 __atomic_fetch_sub_1
++__impl_fetch_and_1 __atomic_fetch_and_1
++__impl_fetch_xor_1 __atomic_fetch_xor_1
++__impl_fetch_nand_1 __atomic_fetch_nand_1
++__impl_fetch_or_1 __atomic_fetch_or_1
++__impl_add_fetch_1 __atomic_add_fetch_1
++__impl_sub_fetch_1 __atomic_sub_fetch_1
++__impl_and_fetch_1 __atomic_and_fetch_1
++__impl_xor_fetch_1 __atomic_xor_fetch_1
++__impl_nand_fetch_1 __atomic_nand_fetch_1
++__impl_or_fetch_1 __atomic_or_fetch_1
++__impl_load_2 __atomic_load_2
++__impl_store_2 __atomic_store_2
++__impl_exchange_2 __atomic_exchange_2
++__impl_compare_exchange_2 __atomic_compare_exchange_2
++__impl_fetch_add_2 __atomic_fetch_add_2
++__impl_fetch_sub_2 __atomic_fetch_sub_2
++__impl_fetch_and_2 __atomic_fetch_and_2
++__impl_fetch_xor_2 __atomic_fetch_xor_2
++__impl_fetch_nand_2 __atomic_fetch_nand_2
++__impl_fetch_or_2 __atomic_fetch_or_2
++__impl_add_fetch_2 __atomic_add_fetch_2
++__impl_sub_fetch_2 __atomic_sub_fetch_2
++__impl_and_fetch_2 __atomic_and_fetch_2
++__impl_xor_fetch_2 __atomic_xor_fetch_2
++__impl_nand_fetch_2 __atomic_nand_fetch_2
++__impl_or_fetch_2 __atomic_or_fetch_2
++__impl_load_4 __atomic_load_4
++__impl_store_4 __atomic_store_4
++__impl_exchange_4 __atomic_exchange_4
++__impl_compare_exchange_4 __atomic_compare_exchange_4
++__impl_fetch_add_4 __atomic_fetch_add_4
++__impl_fetch_sub_4 __atomic_fetch_sub_4
++__impl_fetch_and_4 __atomic_fetch_and_4
++__impl_fetch_xor_4 __atomic_fetch_xor_4
++__impl_fetch_nand_4 __atomic_fetch_nand_4
++__impl_fetch_or_4 __atomic_fetch_or_4
++__impl_add_fetch_4 __atomic_add_fetch_4
++__impl_sub_fetch_4 __atomic_sub_fetch_4
++__impl_and_fetch_4 __atomic_and_fetch_4
++__impl_xor_fetch_4 __atomic_xor_fetch_4
++__impl_nand_fetch_4 __atomic_nand_fetch_4
++__impl_or_fetch_4 __atomic_or_fetch_4
++__impl_load_8 __atomic_load_8
++__impl_store_8 __atomic_store_8
++__impl_exchange_8 __atomic_exchange_8
++__impl_compare_exchange_8 __atomic_compare_exchange_8
++__impl_fetch_add_8 __atomic_fetch_add_8
++__impl_fetch_sub_8 __atomic_fetch_sub_8
++__impl_fetch_and_8 __atomic_fetch_and_8
++__impl_fetch_xor_8 __atomic_fetch_xor_8
++__impl_fetch_nand_8 __atomic_fetch_nand_8
++__impl_fetch_or_8 __atomic_fetch_or_8
++__impl_add_fetch_8 __atomic_add_fetch_8
++__impl_sub_fetch_8 __atomic_sub_fetch_8
++__impl_and_fetch_8 __atomic_and_fetch_8
++__impl_xor_fetch_8 __atomic_xor_fetch_8
++__impl_nand_fetch_8 __atomic_nand_fetch_8
++__impl_or_fetch_8 __atomic_or_fetch_8
++__impl_load_16 __atomic_load_16
++__impl_store_16 __atomic_store_16
++__impl_exchange_16 __atomic_exchange_16
++__impl_compare_exchange_16 __atomic_compare_exchange_16
++__impl_fetch_add_16 __atomic_fetch_add_16
++__impl_fetch_sub_16 __atomic_fetch_sub_16
++__impl_fetch_and_16 __atomic_fetch_and_16
++__impl_fetch_xor_16 __atomic_fetch_xor_16
++__impl_fetch_nand_16 __atomic_fetch_nand_16
++__impl_fetch_or_16 __atomic_fetch_or_16
++__impl_add_fetch_16 __atomic_add_fetch_16
++__impl_sub_fetch_16 __atomic_sub_fetch_16
++__impl_and_fetch_16 __atomic_and_fetch_16
++__impl_xor_fetch_16 __atomic_xor_fetch_16
++__impl_nand_fetch_16 __atomic_nand_fetch_16
++__impl_or_fetch_16 __atomic_or_fetch_16
++__impl_bool_compare_and_swap_1 __sync_bool_compare_and_swap_1
++__impl_val_compare_and_swap_1 __sync_val_compare_and_swap_1
++__impl_fetch_and_add_1 __sync_fetch_and_add_1
++__impl_fetch_and_sub_1 __sync_fetch_and_sub_1
++__impl_fetch_and_and_1 __sync_fetch_and_and_1
++__impl_fetch_and_xor_1 __sync_fetch_and_xor_1
++__impl_fetch_and_or_1 __sync_fetch_and_or_1
++__impl_add_and_fetch_1 __sync_add_and_fetch_1
++__impl_sub_and_fetch_1 __sync_sub_and_fetch_1
++__impl_and_and_fetch_1 __sync_and_and_fetch_1
++__impl_xor_and_fetch_1 __sync_xor_and_fetch_1
++__impl_or_and_fetch_1 __sync_or_and_fetch_1
++__impl_bool_compare_and_swap_2 __sync_bool_compare_and_swap_2
++__impl_val_compare_and_swap_2 __sync_val_compare_and_swap_2
++__impl_fetch_and_add_2 __sync_fetch_and_add_2
++__impl_fetch_and_sub_2 __sync_fetch_and_sub_2
++__impl_fetch_and_and_2 __sync_fetch_and_and_2
++__impl_fetch_and_xor_2 __sync_fetch_and_xor_2
++__impl_fetch_and_or_2 __sync_fetch_and_or_2
++__impl_add_and_fetch_2 __sync_add_and_fetch_2
++__impl_sub_and_fetch_2 __sync_sub_and_fetch_2
++__impl_and_and_fetch_2 __sync_and_and_fetch_2
++__impl_xor_and_fetch_2 __sync_xor_and_fetch_2
++__impl_or_and_fetch_2 __sync_or_and_fetch_2
++__impl_bool_compare_and_swap_4 __sync_bool_compare_and_swap_4
++__impl_val_compare_and_swap_4 __sync_val_compare_and_swap_4
++__impl_fetch_and_add_4 __sync_fetch_and_add_4
++__impl_fetch_and_sub_4 __sync_fetch_and_sub_4
++__impl_fetch_and_and_4 __sync_fetch_and_and_4
++__impl_fetch_and_xor_4 __sync_fetch_and_xor_4
++__impl_fetch_and_or_4 __sync_fetch_and_or_4
++__impl_add_and_fetch_4 __sync_add_and_fetch_4
++__impl_sub_and_fetch_4 __sync_sub_and_fetch_4
++__impl_and_and_fetch_4 __sync_and_and_fetch_4
++__impl_xor_and_fetch_4 __sync_xor_and_fetch_4
++__impl_or_and_fetch_4 __sync_or_and_fetch_4
++__impl_bool_compare_and_swap_8 __sync_bool_compare_and_swap_8
++__impl_val_compare_and_swap_8 __sync_val_compare_and_swap_8
++__impl_fetch_and_add_8 __sync_fetch_and_add_8
++__impl_fetch_and_sub_8 __sync_fetch_and_sub_8
++__impl_fetch_and_and_8 __sync_fetch_and_and_8
++__impl_fetch_and_xor_8 __sync_fetch_and_xor_8
++__impl_fetch_and_or_8 __sync_fetch_and_or_8
++__impl_add_and_fetch_8 __sync_add_and_fetch_8
++__impl_sub_and_fetch_8 __sync_sub_and_fetch_8
++__impl_and_and_fetch_8 __sync_and_and_fetch_8
++__impl_xor_and_fetch_8 __sync_xor_and_fetch_8
++__impl_or_and_fetch_8 __sync_or_and_fetch_8
++__impl_bool_compare_and_swap_16 __sync_bool_compare_and_swap_16
++__impl_val_compare_and_swap_16 __sync_val_compare_and_swap_16
++__impl_fetch_and_add_16 __sync_fetch_and_add_16
++__impl_fetch_and_sub_16 __sync_fetch_and_sub_16
++__impl_fetch_and_and_16 __sync_fetch_and_and_16
++__impl_fetch_and_xor_16 __sync_fetch_and_xor_16
++__impl_fetch_and_or_16 __sync_fetch_and_or_16
++__impl_add_and_fetch_16 __sync_add_and_fetch_16
++__impl_sub_and_fetch_16 __sync_sub_and_fetch_16
++__impl_and_and_fetch_16 __sync_and_and_fetch_16
++__impl_xor_and_fetch_16 __sync_xor_and_fetch_16
++__impl_or_and_fetch_16 __sync_or_and_fetch_16
++__impl_load_replace __atomic_load
++__impl_store_replace __atomic_store
++__impl_exchange_replace __atomic_exchange
++__impl_compare_exchange_replace __atomic_compare_exchange
