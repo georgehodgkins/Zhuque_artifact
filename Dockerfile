@@ -63,7 +63,6 @@ ADD py-tests apps/cpython/wsp-tests
 RUN cd apps/cpython/wsp-tests && python3 -m compileall -q **/*.py && rm -rf **/*.pyc **/__pycache__
 
 FROM snek AS sneksit
-#ENV PIP_INSTALL='pip3 install --install-option="--jobs=8"'
 ENV PIP_INSTALL='pip3 install'
 RUN pip3 install --upgrade pip
 ENV SNEKSIT_PYDEPS='chameleon pyaes django dulwich genshi'
@@ -71,38 +70,38 @@ RUN $PIP_INSTALL $SNEKSIT_PYDEPS
 ADD apps/sneksit /apps/sneksit
 RUN cd apps/sneksit && python3 -m compileall -q tm_*.py && rm -rf *.pyc __pycache__
 
-## this also includes atlas and mnemnosyne
-#FROM sneksit AS clobber-pmdk
-#ENV CLOBBER_PMDK_DEPS='wget xz-dev cmake numactl-dev libevent-dev llvm clang scons libelf elfutils-dev libconfig-dev libexecinfo-dev pkgconf ruby boost1.75 boost1.75-dev libdwarf-dev musl-obstack-dev ndctl-dev fts-dev'
-#RUN apk add $CLOBBER_PMDK_DEPS
-#ENV CLOBBER_PMDK_PYDEPS='pandas'
-#RUN alias make="make -j" && $PIP_INSTALL $CLOBBER_PMDK_PYDEPS && unalias make
-## pmdk
-#ADD clobber-pmdk/pmdk /clobber-pmdk/pmdk
-#RUN cd clobber-pmdk/pmdk && ./build.sh
-## mnemosyne
+# this also includes atlas and mnemnosyne
+FROM sneksit AS clobber-pmdk
+ENV CLOBBER_PMDK_DEPS='wget xz-dev cmake numactl-dev libevent-dev llvm clang scons libelf elfutils-dev libconfig-dev libexecinfo-dev pkgconf ruby boost1.75 boost1.75-dev libdwarf-dev musl-obstack-dev ndctl-dev fts-dev'
+RUN apk add $CLOBBER_PMDK_DEPS
+ENV CLOBBER_PMDK_PYDEPS='pandas'
+RUN alias make="make -j" && $PIP_INSTALL $CLOBBER_PMDK_PYDEPS && unalias make
+# pmdk
+ADD clobber-pmdk/pmdk /clobber-pmdk/pmdk
+RUN cd clobber-pmdk/pmdk && ./build.sh
+# mnemosyne
 ADD clobber-pmdk/mnemosyne-gcc /clobber-pmdk/mnemosyne-gcc
-#RUN cd clobber-pmdk/mnemosyne-gcc && ./build.sh
-## llvm, w/clobber passes
-#ADD clobber-pmdk/llvm /clobber-pmdk/llvm
-#ADD clobber-pmdk/passes /clobber-pmdk/passes
-#ADD clobber-pmdk/build_clobberpass.sh /clobber-pmdk/
-#RUN cd clobber-pmdk && ./build_clobberpass.sh
-#ADD clobber-pmdk/rollinlineclang clobber-pmdk/clobberlogclang /clobber-pmdk
-## atlas
-#ADD clobber-pmdk/atlas /clobber-pmdk/atlas
-#RUN cd clobber-pmdk/atlas && ./build.sh
-## taslock
-#ADD clobber-pmdk/taslock /clobber-pmdk/taslock
-#RUN cd clobber-pmdk/taslock && make clean && make
-## build clobber runtime and clobber apps (memcached, stamp)
-#ADD clobber-pmdk/apps /clobber-pmdk/apps
-#RUN cd clobber-pmdk/apps && ./build_runtime.sh
-#RUN cd clobber-pmdk/apps && ./build_memcached.sh mutex pmdk && ./build_memcached.sh mutex clobber
-#RUN cd clobber-pmdk/apps/stamp/vacation && ./build.sh rbtree pmdk && ./build.sh rbtree clobber
-#RUN cd clobber-pmdk/apps/stamp/yada && make
+RUN cd clobber-pmdk/mnemosyne-gcc && ./build.sh
+# llvm, w/clobber passes
+ADD clobber-pmdk/llvm /clobber-pmdk/llvm
+ADD clobber-pmdk/passes /clobber-pmdk/passes
+ADD clobber-pmdk/build_clobberpass.sh /clobber-pmdk/
+RUN cd clobber-pmdk && ./build_clobberpass.sh
+ADD clobber-pmdk/rollinlineclang clobber-pmdk/clobberlogclang /clobber-pmdk
+# atlas
+ADD clobber-pmdk/atlas /clobber-pmdk/atlas
+RUN cd clobber-pmdk/atlas && ./build.sh
+# taslock
+ADD clobber-pmdk/taslock /clobber-pmdk/taslock
+RUN cd clobber-pmdk/taslock && make clean && make
+# build clobber runtime and clobber apps (memcached, stamp)
+ADD clobber-pmdk/apps /clobber-pmdk/apps
+RUN cd clobber-pmdk/apps && ./build_runtime.sh
+RUN cd clobber-pmdk/apps && ./build_memcached.sh mutex pmdk && ./build_memcached.sh mutex clobber
+RUN cd clobber-pmdk/apps/stamp/vacation && ./build.sh rbtree pmdk && ./build.sh rbtree clobber
+RUN cd clobber-pmdk/apps/stamp/yada && make
 
 # add top-level runners
 ADD apps/run_all.sh apps/run_memcache.sh apps/run_new_memcache.sh apps/run_all.sh /apps/
-#ADD clobber-pmdk/run_all.sh /clobber-pmdk/
-ADD ./run_all.sh /
+ADD clobber-pmdk/run_all.sh /clobber-pmdk/
+ADD ./run_all.sh ./run_memcache.py /

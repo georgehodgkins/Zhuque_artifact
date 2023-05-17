@@ -22,4 +22,7 @@ cat /apps/vacation.csv >> vacation.csv
 cat /clobber-pmdk/yada.csv >> yada.csv
 cat /apps/yada.csv >> yada.csv
 
+cp /apps/libc-bench*.out .
+cp /apps/sneksit.out .
 
+exit 0
