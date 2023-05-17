@@ -8,6 +8,7 @@ import subprocess
 from subprocess import PIPE, DEVNULL
 import sys
 import os
+import copy
 
 def do_bench(name, func, iters):
     if not callable(func):
@@ -36,10 +37,12 @@ if __name__ == "__main__":
     cwd = Path.cwd()
     benches = cwd.glob('tm_*.py')
 
+    ps_env = copy.deepcopy(os.environ)
+    ps_env['LD_RELOAD'] = psdir
     for bench in benches:
         # run without pmem
         print(bench.name, "VOLATILE", end='', flush=True)
-        vres = subprocess.run([sys.executable, bench.name], stdout=PIPE, stderr=DEVNULL, text=True)
+        vres = subprocess.run([sys.executable, bench.name], stdout=PIPE, stderr=DEVNULL, text=True, env=os.environ)
         if vres.returncode != 0:
             exc = "Volatile run of {0} did not exit cleanly! Code {1}".format(bench.name, vres.returncode)
             raise RuntimeError(exc)
@@ -49,10 +52,9 @@ if __name__ == "__main__":
 
         # run with pmem
         print(bench.name, "PERSISTENT", end='', flush=True)
-        nenv = os.environ
-        nenv['LD_RELOAD'] = psdir
 
-        pres = subprocess.run([sys.executable, bench.name], stdout=PIPE, stderr=DEVNULL, text=True, env=nenv)
+        subprocess.run(["rm", "-rf", psdir + "/*"], check=True, env=os.environ)
+        pres = subprocess.run([sys.executable, bench.name], stdout=PIPE, stderr=DEVNULL, text=True, env=ps_env)
         if pres.returncode != 0:
             exc = "Persistent run of {0} did not exit cleanly! Code {1}".format(bench.name, pres.returncode)
             raise RuntimeError(exc)

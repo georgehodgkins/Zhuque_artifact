@@ -97,7 +97,7 @@ struct dso {
 	char buf[];
 };
 
-void pmap_fresh_start(struct dso*, struct dso*);
+void pmap_fresh_start(struct dso*, struct dso*, void*);
 void pmap_restore_heaps(void);
 void pmap_restore_file_backed(void);
 void pmap_cleanup(void);

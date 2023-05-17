@@ -785,7 +785,9 @@ static void *map_library(int fd, struct dso *dso)
 			size_t brk = (size_t)base+ph->p_vaddr+ph->p_filesz;
 			size_t pgbrk = brk+PAGE_SIZE-1 & -PAGE_SIZE;
 			memset((void *)brk, 0, pgbrk-brk & PAGE_SIZE-1);
-			if (pgbrk-(size_t)base < this_max && mmap_fixed((void *)pgbrk, (size_t)base+this_max-pgbrk, prot, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) == MAP_FAILED)
+			if (pgbrk-(size_t)base < this_max &&
+				mmap_fixed((void *)pgbrk, (size_t)base+this_max-pgbrk, prot,
+					MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) == MAP_FAILED)
 				goto error;
 		}
 	}
@@ -1795,9 +1797,9 @@ void __dls3(size_t *sp, size_t *auxv)
 		else
 			app.name = argv[0];
 		kernel_mapped_dso(&app);
-		skipload = faai_startup(&ldso, &app);
+		skipload = faai_startup_dynamic(&ldso, &app, (void*) sp);
 	} else {
-		skipload = faai_startup(&ldso, NULL); // executable not kernel mapped
+		skipload = faai_startup_dynamic(&ldso, NULL, (void*) sp); // executable not kernel mapped
 	
 		if (!skipload) {
 		int fd;

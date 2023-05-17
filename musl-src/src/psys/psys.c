@@ -485,8 +485,7 @@ int faai_start_main(main_t umain, int argc, char** argv, char** envp) {
 
 int _p_pthread_create(pthread_t *thread, const pthread_attr_t *attr,
         void *(*start_routine) (void *), void *arg) {
-	FAAI_CHECK_INIT();
-
+	assert(atomic_load(&pStat) & _FAAI_DET_);
 	if (atomic_load(&pStat) & _FAAI_ACTIVE_) {
 		inject_param* wrapper_arg = psys_alloc(sizeof(inject_param));
 		wrapper_arg->fn = start_routine;
@@ -500,8 +499,16 @@ int _p_pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 /*
  * 5. Constructor and Destructor
  */
+// Zhuque does not actually support static linking (because it is more difficult to find the pre-mapped regions)
+// this function just marks Zhuque as disabled if it is not already set up
+void faai_startup_static (void) {
+	if (!(atomic_load(&pStat) & _FAAI_DET_)) {
+		atomic_store(&pStat, _FAAI_DET_); 
+	}
+}
+
 // Main init function
-bool faai_startup(struct dso* libc_obj, struct dso* exec_obj) {
+bool faai_startup_dynamic(struct dso* libc_obj, struct dso* exec_obj, void* v_sp) {
 	// block recursive init
 	unsigned comp = 0;
 	if (!atomic_compare_exchange_strong(&pStat, &comp, 1)) { // sets _FAAI_DET_ flag
@@ -586,7 +593,7 @@ bool faai_startup(struct dso* libc_obj, struct dso* exec_obj) {
 
 	if (st & _FAAI_FRESH_) {
 		pfile_fresh_start();
-		pmap_fresh_start(libc_obj, exec_obj);
+		pmap_fresh_start(libc_obj, exec_obj, v_sp);
 		skip_loading = false;
 #ifdef TIME_PSYS
 		__foon = "fresh startup";

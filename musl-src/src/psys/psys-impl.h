@@ -107,13 +107,6 @@ typedef struct {
 extern atomic_uint pStat;
 
 #include <dlfcn.h>
-#define FAAI_CHECK_INIT() \
-	do { if (!(atomic_load(&pStat) & _FAAI_DET_)) { \
-		struct dso* ldso = (struct dso*) dlopen(NULL, RTLD_GETRTLD); \
-		struct dso* exec = (struct dso*) dlopen(NULL, 0); \
-		faai_startup(ldso, exec); \
-	} } while (0) 
-
 extern ProcessContext* ProcessCtx;
 ThreadContext* myContext(void);
 

@@ -1,5 +1,6 @@
 #include "psys-impl.h"
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include "syscall.h"
 #include "pthread_impl.h"
 
@@ -274,17 +275,33 @@ static void remove_vmtab_entries(void* addr, size_t len) {
 					ProcessCtx->vmtab[i].len -= len;
 					atomic_store(&ProcessCtx->vmtab[i].base, base + len);
 					remlen += len;
+					break; // this entry contained the whole removal region
 				}
 			} else if (base < addr && (base + tlen) > addr) {
-				size_t shrink = (base + tlen) - addr;
-				ProcessCtx->vmtab[i].len -= shrink;
-				remlen += shrink;
-			} else if (base > addr) { 
+				if ((addr + len) >= (base + tlen)) { // shrink from the right
+					size_t shrink = (base + tlen) - addr;
+					ProcessCtx->vmtab[i].len -= shrink;
+					remlen += shrink;
+				} else { // split this entry around the removal region
+					// first, place the new mapping on the right
+					void* rbase = base + tlen;
+					size_t rlen = rbase - (addr + len);
+					size_t llen = addr - base;
+					off_t roff = ProcessCtx->vmtab[i].off + llen + len;
+					add_vmtab_entry(rbase, rlen, ProcessCtx->vmtab[i].prot,
+							ProcessCtx->vmtab[i].flags, -1, roff, -1); 
+					// then, shrink the old mapping
+					ProcessCtx->vmtab[i].len -= len;
+					remlen += len;
+					assert(ProcessCtx->vmtab[i].len == llen);
+					break;
+				}
+			} else if (base > addr && ((addr + len) > base)) { 
 				if (base + tlen <= addr + len) {
 					remove_vmtab_entry(i);
 					remlen += tlen;
-				} else if (base < addr + len) {
-					size_t shrink = tlen - len;
+				} else { // shrink from the left
+					size_t shrink = (addr + len) - base;
 					ProcessCtx->vmtab[i].len -= shrink;
 					atomic_store(&ProcessCtx->vmtab[i].base, addr + len);
 					remlen += shrink;
@@ -292,62 +309,11 @@ static void remove_vmtab_entries(void* addr, size_t len) {
 			}
 		}
 	}
-	//assert(remlen == len);
+	assert(remlen == len);
 }
 
-// transform a memory region to pmem backing
-// contents will be copied if MAP_POPULATE is in flags, or zeroed if MAP_ANONYMOUS
-static void* make_pmem_backed(volatile ProcessContext* ctx, void* addr, size_t len, int prot, int flags) {
-
-	TIMER_START();
-	flags &= ~MAP_PRIVATE;
-#ifdef REAL_PMEM
-	flags |= (MAP_SYNC | MAP_SHARED_VALIDATE);
-#else
-	flags |= MAP_SHARED;
-#endif
-	
-	// align args, to avoid silent discrepancies between table and actual mappings
-	addr = (void*) ((uint64_t) addr & ~(PAGE_SIZE-1));
-	if (len % PAGE_SIZE) len += PAGE_SIZE - (len % PAGE_SIZE);
-
-	// check if this is already a pmem-backed region
-	if (addr) {
-		int existing = find_vmtab_entry(addr);
-		if (existing >= 0 && ProcessCtx->vmtab[existing].des >= 0) {
-			assert(!(flags & MAP_POPULATE)
-				&& "Need to add MAP_POPULATE support in this branch");
-			vmtab_entry_t *ex_ent = &ProcessCtx->vmtab[existing];
-			void* estop = ex_ent->base + ex_ent->len;
-			void* nstop = addr + len;
-			if (nstop > estop) { // need to extend existing file
-				ex_ent->len += (nstop - estop);
-				assert(!(ex_ent->len & (PAGE_SIZE-1)));
-				char* name = alloca(desnamelen(ex_ent->des));
-				des2name(ex_ent->des, name);
-				int fd;
-				ERRNO_REPORT_GEZ(fd, _v_openat, ctx->heap_dir, name, O_RDWR, 0700);
-				ERRNO_REPORT_Z_NR(fallocate, fd, 0, 0, ex_ent->len);
-				void* naddr = _v_mmap(ex_ent->base, ex_ent->len, ex_ent->prot,
-					ex_ent->flags|FIXEDMAP, fd, 0);
-				assert(naddr == ex_ent->base);
-				ERRNO_REPORT_Z_NR(_v_close, fd);
-			}
-			if (ex_ent->prot != prot) {
-				_v_mprotect(addr, len, prot);
-				add_vmtab_entry(addr, len, prot, flags, -1,
-					(off_t) (addr - ex_ent->base), ex_ent->des);
-			}
-			if (flags & MAP_ANONYMOUS) {
-				ntmemset(addr, 0, len);
-				flags &= ~MAP_ANONYMOUS;
-			}
-			TIMER_STOP("modify pmem region");
-			return addr;
-		}
-	}
-
-	
+// Create and map a new persistent heap file
+static void* new_pheap (volatile ProcessContext* ctx, void* addr, size_t len, int prot, int flags) {
 	// assign designator
 	unsigned des = get_new_desref();
 	char* name = alloca(desnamelen(des));
@@ -382,15 +348,15 @@ static void* make_pmem_backed(volatile ProcessContext* ctx, void* addr, size_t l
 			len += (PAGE_SIZE - len_mod);
 		}
 		ERRNO_REPORT_Z_NR(fsync, fd);
-		//ERRNO_REPORT_Z_NR(_v_munmap, addr, len);
 	} 
 
-	if (addr) {
-		//flags |= FIXEDMAP;
-		flags |= MAP_FIXED;
+	if (addr) { // fixed mapping
+		flags |= FIXEDMAP;
+		ERRNO_REPORT_Z_NR(_v_munmap, addr, len);
 	}
-	void* nmap = _v_mmap(addr, len, prot, flags & ~MAP_ANONYMOUS, fd, 0);
-	assert(nmap != MAP_FAILED);
+	unsigned long nmap_l = __syscall(SYS_mmap, addr, len, prot, flags & ~MAP_ANONYMOUS, fd, 0);
+	assert(nmap_l < -4096UL);
+	void* nmap = (void*) nmap_l;
 	if (addr) assert(nmap == addr);
 	addr = nmap;
 
@@ -402,9 +368,9 @@ static void* make_pmem_backed(volatile ProcessContext* ctx, void* addr, size_t l
 	// done with fd after mapping
 	ERRNO_REPORT_Z_NR(_v_close, fd);
 
-	add_vmtab_entry(addr, len, prot, flags, -1, 0, des); 
+	add_vmtab_entry(addr, len, prot, flags & ~FIXEDMAP, -1, 0, des); 
 
-	TIMER_STOP("create pmem region");
+	TIMER_STOP("create pheap");
 #ifndef DNDEBUG
 	int nt = find_vmtab_entry(addr);
 	assert(nt >= 0);
@@ -416,6 +382,63 @@ static void* make_pmem_backed(volatile ProcessContext* ctx, void* addr, size_t l
 	return addr;
 }
 
+// transform a memory region to pmem backing
+// contents will be copied if MAP_POPULATE is in flags, or zeroed if MAP_ANONYMOUS
+static void* make_pmem_backed(volatile ProcessContext* ctx, void* addr, size_t len, int prot, int flags) {
+
+	TIMER_START();
+	flags &= ~MAP_PRIVATE;
+#ifdef REAL_PMEM
+	flags |= (MAP_SYNC | MAP_SHARED_VALIDATE);
+#else
+	flags |= MAP_SHARED;
+#endif
+	
+	// align args, to avoid silent discrepancies between table and actual mappings
+	addr = (void*) ((uint64_t) addr & ~(PAGE_SIZE-1));
+	if (len % PAGE_SIZE) len += PAGE_SIZE - (len % PAGE_SIZE);
+
+	// check if this is already a pmem-backed region
+	if (addr) {
+		assert(flags & MAP_FIXED);
+		int existing = find_vmtab_entry(addr);
+		if (existing >= 0 && ProcessCtx->vmtab[existing].des >= 0) {
+			assert(!(flags & MAP_POPULATE)
+				&& "Need to add MAP_POPULATE support in this branch");
+			vmtab_entry_t *ex_ent = &ProcessCtx->vmtab[existing];
+			void* estop = ex_ent->base + ex_ent->len;
+			void* nstop = addr + len;
+			if (nstop > estop) { // need to extend existing file
+				size_t ext_len = nstop - estop;
+				ex_ent->len += ext_len;
+				assert(!(ex_ent->len & (PAGE_SIZE-1)));
+				char* name = alloca(desnamelen(ex_ent->des));
+				des2name(ex_ent->des, name);
+				int fd;
+				ERRNO_REPORT_GEZ(fd, _v_openat, ctx->heap_dir, name, O_RDWR, 0700);
+				ERRNO_REPORT_Z_NR(fallocate, fd, 0, 0, ex_ent->len);
+				void* naddr = _v_mmap(estop, ext_len, ex_ent->prot,
+					ex_ent->flags|MAP_FIXED, fd, ex_ent->off + (estop - ex_ent->base));
+				assert(naddr == estop);
+				ERRNO_REPORT_Z_NR(_v_close, fd);
+			}
+			if (ex_ent->prot != prot) {
+				_v_mprotect(addr, len, prot);
+				add_vmtab_entry(addr, len, prot, flags, -1,
+					(off_t) (addr - ex_ent->base), ex_ent->des);
+			}
+			if (flags & MAP_ANONYMOUS) {
+				ntmemset(addr, 0, len);
+				flags &= ~MAP_ANONYMOUS;
+			}
+			TIMER_STOP("modify pmem region");
+			return addr;
+		}
+	}
+
+	return new_pheap(ctx, addr, len, prot, flags);
+}
+	
 // restores vmtab entry after a failure
 static void restore_vmtab_entry(volatile ProcessContext* ctx, int idx) {
 	TIMER_START();
@@ -473,7 +496,7 @@ static void persist_kernel_mapped(volatile ProcessContext* ctx, struct dso* obj)
 		if (phdr[i].p_flags & PF_W) { // writable segment
 			// to be safe, we assume even BSS segments could have contents already
 			void* naddr = make_pmem_backed(ctx, seg_addr, seg_len, PROT_READ|PROT_WRITE,
-					MAP_SHARED|MAP_POPULATE);
+					MAP_SHARED|MAP_POPULATE|MAP_FIXED);
 			assert(naddr == seg_addr);
 		}
 		if (phdr[i].p_flags & PF_X) { // executable segment (W/X are not mutually exclusive, although rare)
@@ -535,41 +558,44 @@ void* psys_alloc(size_t sz) {
 }
 
 // handle thread stack overflows
+// NOTES:
+// 1) _v_mmap cannot be used in this function because
+// it tries to set errno (which is not available in signal handlers)
+// 2) we always use MAP_FIXED instead of FIXEDMAP here, since we know the guard mapping is present
 static struct sigaction fallback_segv_action, faai_segv_action;
 void faai_sigsegv_handler (int sig, siginfo_t* info, void* ucontext) {
 	assert(sig == SIGSEGV);
 	ERRNO_REPORT_Z_NR(sigaction, sig, &fallback_segv_action, NULL);
 	struct pthread* self = (struct pthread*) __pthread_self();
-	if (self && info->si_addr > (self->stack - self->stack_size - PAGE_SIZE) && info->si_addr <= self->stack) {
+	void* stack_base = self->stack - self->stack_size; // the 'stack' member is the *end* of the stack in memory
+	if (self && info->si_addr > (stack_base - PAGE_SIZE) && info->si_addr <= self->stack) {
 		TIMER_START();
 		// handle stack overflow
-		int existing = find_vmtab_entry(self->stack);
+		int existing = find_vmtab_entry(stack_base);
 		assert(existing != -1);
 		vmtab_entry_t* ex_ent = &ProcessCtx->vmtab[existing];
-		size_t nlen = ex_ent->len + __default_stacksize;
-		void* naddr = ex_ent->base - __default_stacksize;
-		assert(self->guard_size >= nlen && "No more space to extend stack!");
+		void* new_base = stack_base - __default_stacksize;
+		assert(self->guard_size > __default_stacksize && "No more space to extend stack!");
+		remove_vmtab_entries(new_base, __default_stacksize); // remove PROT_NONE mapping from table
 
 #ifdef USE_VSTACK
+		size_t new_len = ex_ent->len + __default_stacksize;
 		assert(ex_ent->des == -1);
 		assert(ex_ent->flags & MAP_ANON);
-		void* nmap = _v_mmap(naddr, nlen, ex_ent->prot, ex_ent->flags | FIXEDMAP, -1, 0);
+		unsigned long nmap_l = __syscall(SYS_mmap, new_base, new_len,
+				ex_ent->prot, ex_ent->flags | MAP_FIXED, -1, 0);
+		assert(nmap_l < -4096UL);
+		void* nmap = (void*) nmap_l;
+		assert(nmap == new_base);
+		ex_ent->base = new_base;
+		ex_ent->len = new_len;
 #else	
-		// extend file
-		assert(ex_ent->des >= 0);
-		assert(atomic_load(&ProcessCtx->desref[ex_ent->des]) == 1);
-		char* name = alloca(desnamelen(ex_ent->des));
-		des2name(ex_ent->des, name);
-		int fd;
-		ERRNO_REPORT_GEZ(fd, _v_openat, ProcessCtx->heap_dir, name, O_RDWR, 0);
-		ERRNO_REPORT_Z_NR(fallocate, fd, FALLOC_FL_INSERT_RANGE, ex_ent->off, __default_stacksize);
-
-		// extend mapping
-		void* nmap = _v_mmap(naddr, nlen, ex_ent->prot, ex_ent->flags | FIXEDMAP, fd, ex_ent->off);
+		// just extending the existing stack file causes bugs if it the stack
+		// is accessed concurrently, so we have to create a new file for each extension
+		void* nmap = new_pheap(ProcessCtx, new_base, __default_stacksize, 
+				ex_ent->prot, ex_ent->flags & ~MAP_POPULATE);
+		assert(nmap == new_base);
 #endif
-		assert(nmap == naddr);
-		ex_ent->base = naddr;
-		ex_ent->len = nlen;
 		self->stack_size += __default_stacksize;	
 		self->guard_size -= __default_stacksize;
 		TIMER_STOP("stack extend");
@@ -598,6 +624,7 @@ void setup_alt_stack (void) {
 	size_t mapsz = (SIGSTKSZ > PAGE_SIZE) ? SIGSTKSZ : PAGE_SIZE;
 	void* mem = _v_mmap(NULL, mapsz, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANON, -1, 0);
 	assert(mem != MAP_FAILED);
+	add_vmtab_entry(mem, mapsz, PROT_READ|PROT_WRITE, MAP_PRIVATE, -1, 0, -1);	
 	stack_t altstack;
 	altstack.ss_sp = mem;
 	altstack.ss_flags = 0;
@@ -671,7 +698,7 @@ void* _p_mmap (void* addr, size_t len, int prot, int flags, int fd, off_t off) {
 				void* naddr = _v_mmap(addr, len, prot, flags, fd, off);
 				assert(naddr != MAP_FAILED);
 				if (flags & MAP_FIXED) assert(naddr == addr);
-				return make_pmem_backed(ProcessCtx, naddr, len, prot, flags | MAP_POPULATE);
+				return make_pmem_backed(ProcessCtx, naddr, len, prot, flags | MAP_POPULATE | MAP_FIXED);
 			} else return make_pmem_backed(ProcessCtx, addr, len, prot, flags & ~MAP_POPULATE);
 		} else { // unbacked mapping
 			TIMER_START();
@@ -689,9 +716,14 @@ void* _p_mmap (void* addr, size_t len, int prot, int flags, int fd, off_t off) {
 	}
 }
 
+// Zhuque does not actually remove mappings...writing an allocator is hard, it turns out
 int _p_munmap (void* addr, size_t len) {
-	if (atomic_load(&pStat) & _FAAI_ACTIVE_) remove_vmtab_entries(addr, len);
-	return _v_munmap(addr, len);
+	if (atomic_load(&pStat) & _FAAI_ACTIVE_) {
+		//remove_vmtab_entries(addr, len);
+		return 0;
+	} else {
+		return _v_munmap(addr, len);
+	}
 }
 
 void* _p_mremap (void* old_addr, size_t old_len, size_t new_len, int flags, void* new_addr) {
@@ -767,7 +799,6 @@ void _p_unmapself(void* addr, size_t len) {
 	while (1) ;
 }
 			
-
 // TODO: does not support changes across multiple mappings. Probably not important.
 int _p_mprotect (void* addr, size_t len, int prot) {
 	if (atomic_load(&pStat) & _FAAI_ACTIVE_) {
@@ -881,7 +912,7 @@ void pmap_restore_file_backed (void) {
 }
 
 // initializes library for a fresh process
-void pmap_fresh_start (struct dso* libc_obj, struct dso* exec_obj) {
+void pmap_fresh_start (struct dso* libc_obj, struct dso* exec_obj, void* v_sp) {
 	TIMER_START();
 	assert(fcntl(ProcessCtx->heap_dir, F_GETFD) != -1 && "Heap dir not set!"); 
 	volatile ProcessContext* ctx_local = ProcessCtx; // can't use the global ptr while it's being remapped
@@ -896,6 +927,15 @@ void pmap_fresh_start (struct dso* libc_obj, struct dso* exec_obj) {
 	persist_kernel_mapped(ctx_local, libc_obj);
 	assert(ProcessCtx == ctx_local);
 	if (exec_obj) persist_kernel_mapped(ctx_local, exec_obj);
+	// add an entry for the volatile thread's stack (maximum possible size)
+	struct rlimit rl;
+	ERRNO_REPORT_Z_NR(getrlimit, RLIMIT_STACK, &rl);
+	size_t vstack_len_mod = (size_t) rl.rlim_cur & (PAGE_SIZE-1);
+	if (vstack_len_mod) rl.rlim_cur += (PAGE_SIZE - vstack_len_mod);
+	size_t sp_mod = ((size_t) v_sp) & (PAGE_SIZE-1ul);
+	if (sp_mod) v_sp += (PAGE_SIZE - sp_mod);
+	void* v_sbase = v_sp - rl.rlim_cur; // stack grows down
+	add_vmtab_entry(v_sbase, rl.rlim_cur, 0, 0, -1, 0, -1);
 	setup_segv_handler();
 	TIMER_STOP("pmap fresh start");
 }

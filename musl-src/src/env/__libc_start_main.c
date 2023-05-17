@@ -74,6 +74,7 @@ static lsm2_fn libc_start_main_stage2;
 int __libc_start_main(int (*main)(int,char **,char **), int argc, char **argv,
 	void (*init_dummy)(), void(*fini_dummy)(), void(*ldso_dummy)())
 {
+	faai_startup_static();
 	char **envp = argv+argc+1;
 
 	/* External linkage, and explicit noinline attribute if available,

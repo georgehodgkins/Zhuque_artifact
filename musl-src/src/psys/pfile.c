@@ -844,7 +844,6 @@ void fdtab_is_valid(void) {
 
 // creat/open are redirected here
 int _p_openat(int dirfd, const char* pathname, int flags, mode_t mode) {
-	FAAI_CHECK_INIT();
 	TIMER_START();
 
 	faai_startcrit(); // OS-level opening and recording in fdtab must be atomic wrt failure
@@ -875,7 +874,6 @@ int _p_openat(int dirfd, const char* pathname, int flags, mode_t mode) {
 }
 
 int _p_close (int fd) {
-	FAAI_CHECK_INIT();
 	TIMER_START();
 
 	faai_startcrit();
@@ -939,7 +937,6 @@ static int orig_socket(int domain, int type, int protocol) {
 }
 		
 int _p_socket(int domain, int type, int protocol) {
-	FAAI_CHECK_INIT();
 	TIMER_START();
 
 	faai_startcrit();
@@ -954,7 +951,6 @@ int _p_socket(int domain, int type, int protocol) {
 }
 
 int _p_bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
-	FAAI_CHECK_INIT();
 	TIMER_START();
 
 	faai_startcrit();
@@ -966,7 +962,6 @@ int _p_bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
 }
 
 int _p_connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
-	FAAI_CHECK_INIT();
 	TIMER_START();
 
 	faai_startcrit();
