@@ -20,7 +20,8 @@ cd ../mnemosyne-gcc/usermode/
 ./run_vacation.sh
 cat vacation.csv >> ../../vacation.csv
 #./run_memcache.sh
-/run_memcache.py mnemosyne
-cat memcached-mnemosyne.csv >> ../../memcached.csv
+echo "SKIPPING mnemosyne memcached due to recent regressions"
+#/run_memcache.py mnemosyne
+#cat memcached-mnemosyne.csv >> ../../memcached.csv
 cd ../..
 

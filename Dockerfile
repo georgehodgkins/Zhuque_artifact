@@ -102,6 +102,6 @@ RUN cd clobber-pmdk/apps/stamp/vacation && ./build.sh rbtree pmdk && ./build.sh 
 RUN cd clobber-pmdk/apps/stamp/yada && make
 
 # add top-level runners
-ADD apps/run_all.sh apps/run_memcache.sh apps/run_new_memcache.sh apps/run_all.sh /apps/
+ADD apps/run_all.sh /apps/
 ADD clobber-pmdk/run_all.sh /clobber-pmdk/
 ADD ./run_all.sh ./run_memcache.py /

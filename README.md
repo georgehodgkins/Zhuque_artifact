@@ -125,7 +125,6 @@ To run:
 		- `memcached`: Contains source code for Memcached-1.2.5
 		- `memcached-1.6.17`: Contains source code for Memcached-1.6.17
 		- `sneksit`: Contains the Pyperformance benchmark suite, with a handwritten test runner for Python on Zhuque
-			NOTE: not working at time of submission.
 		- `stamp`: Contains source code for Yada and Vacation 
 	- `pigframe`: Contains materials for the kernel modification
 	- `libc-test`: Contains the musl test suite
@@ -152,8 +151,8 @@ To run:
 ## Artifact Claims
 	This artifact is designed to verify:
 	- All performance results from Section 6, for both Zhuque and comparison systems
-		(if a system with PMEM is available). The Python benchmarks weren't working when we submitted,
-		but we expect we can probably fix them up during the kick-the-tires phase.
+		(if a system with PMEM is available). The Mnemosyne implementation of Memcached
+		has been having problems recently with thread counts >2.
 	- Zhuque can successfully restart programs after a simulated failure,
 		as described in Section 5.1
 	- The kernel modification correctly saves the register file to the redundant state

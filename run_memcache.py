@@ -119,6 +119,8 @@ def run_config (name):
     
     if PRINT_PROGRESS:
         print(f"RESULTS FOR MEMCACHED-{name}:")
+    else:
+        print(f"Running memcached-{name}...", end='', flush=True)
         
     with open(f"memcached-{name}.csv", "w") as data_fd:
         for T in THREADS:
@@ -154,6 +156,8 @@ def run_config (name):
                     data_fd.write(result_line)
                     if PRINT_PROGRESS:
                         print("\t" + result_line)
+    if not PRINT_PROGRESS:
+        print("done.")
                     
 if __name__ == "__main__":
     config_name = sys.argv[1]
