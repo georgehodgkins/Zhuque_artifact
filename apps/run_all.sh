@@ -44,5 +44,5 @@ printf "Running libc-bench..."
 rm -rf /mnt/pmem/wsp/*
 cd ../libc-bench
 ./libc-bench > /apps/libc-bench-native.out
-LD_RELOAD=/mnt/pmem/wsp ./libc-bench /apps/libc-bench-zhuque.out
+LD_RELOAD=/mnt/pmem/wsp ./libc-bench > /apps/libc-bench-zhuque.out
 
