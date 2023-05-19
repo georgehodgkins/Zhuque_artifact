@@ -12,7 +12,7 @@ real PMEM to run.
 The libc portion of the artifact is packaged as a Docker image, based on Alpine Linux 3.14. 
 
 To build, starting in the root directory:
-	`docker build . -t zhuque-artifact --libc_flags=<flags>`
+	`docker build . -t zhuque-artifact --build-arg libc_flags=<flags>`
 
 	There are two important options which can be specified in libc_flags:
 
@@ -24,6 +24,7 @@ To build, starting in the root directory:
 	information.
 	
 	These options are independent of each other. To select both, pass them in a string: `'-DREAL_PMEM -DUSE_PIGFRAME'`.
+    If neither option is desired, the `--build-arg` flag should be omitted.
 
 	A full build took around 1.5 hours on the evaluation machine described in the paper. It should require
 	no interaction.
