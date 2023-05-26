@@ -7,7 +7,12 @@ ENV DEPS='gcc g++ make ninja musl-dev linux-headers'
 
 RUN apk update && apk add $DEPS $UTILS
 
-FROM sysbase AS builder
+# generate list of regression failures for unmodified musl on this system
+FROM sysbase AS testcompgen
+ADD libc-test /musl-libc/test
+RUN cd musl-libc/test && make && make clean && cd src && mv REPORT REPORT.clean
+
+FROM testcompgen AS builder
 ARG libc_flags=''
 ENV LIBC_CFLAGS '-O2 -pipe -g -DNDEBUG' $libc_flags
 #ENV LIBC_CFLAGS '-O0 -pipe -g' $libc_flags
@@ -19,7 +24,6 @@ FROM builder AS installer
 RUN cd musl-libc && make install
 
 FROM installer AS libtest
-ADD libc-test /musl-libc/test
 RUN cd musl-libc/test && make && make clean && cd src && diff REPORT.clean REPORT
 
 FROM libtest AS unittest
