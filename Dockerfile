@@ -91,7 +91,7 @@ ADD clobber-pmdk/llvm /clobber-pmdk/llvm
 ADD clobber-pmdk/passes /clobber-pmdk/passes
 ADD clobber-pmdk/build_clobberpass.sh /clobber-pmdk/
 RUN cd clobber-pmdk && ./build_clobberpass.sh
-ADD clobber-pmdk/rollinlineclang clobber-pmdk/clobberlogclang /clobber-pmdk
+ADD clobber-pmdk/rollinlineclang clobber-pmdk/clobberlogclang /clobber-pmdk/
 # atlas
 ADD clobber-pmdk/atlas /clobber-pmdk/atlas
 RUN cd clobber-pmdk/atlas && ./build.sh
